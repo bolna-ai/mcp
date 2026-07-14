@@ -7,3 +7,4 @@ node_modules
 next-env.d.ts
 .claude/settings.local.json
 bolna-mcp-tool-design.md
+.env*
