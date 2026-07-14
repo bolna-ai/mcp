@@ -3,7 +3,7 @@
 # (--scope user: personal to you, works across all your projects).
 set -euo pipefail
 
-URL="${BOLNA_MCP_URL:-https://bolna-mcp-eta.vercel.app/api/mcp}"
+URL="${BOLNA_MCP_URL:-https://mcp.bolna.ai/api/mcp}"
 
 if ! command -v claude >/dev/null 2>&1; then
   echo "claude CLI not found. Install it first: curl -fsSL https://claude.ai/install.sh | bash" >&2

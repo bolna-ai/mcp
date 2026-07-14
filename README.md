@@ -4,6 +4,12 @@ Remote MCP server (Streamable HTTP) wrapping the [Bolna](https://bolna.ai) voice
 AI REST API (`https://api.bolna.ai`): 7 read tools, 4 write tools, TypeScript,
 deployed on Vercel via `mcp-handler`.
 
+**Live at [mcp.bolna.ai](https://mcp.bolna.ai)** — that page has the same
+connect instructions below with copy-paste buttons for each client.
+
+MCP is an open protocol, not Claude-specific — this server works with any
+MCP-compatible client: Claude, Codex, Cursor, Windsurf, Zed, and others.
+
 Endpoint corrections found while verifying tool paths against the live Bolna
 docs are documented in the comment block at the top of
 [`src/tools/index.ts`](src/tools/index.ts).
@@ -26,23 +32,22 @@ docs are documented in the comment block at the top of
 
 ## Install & use
 
-**Prerequisite:** your own Bolna API key (from the Bolna dashboard).
+**Prerequisite:** your own Bolna API key (from the Bolna dashboard). Every
+client below needs the same two things: the server URL
+(`https://mcp.bolna.ai/api/mcp`) and that key as a Bearer token.
 
-### Option A — one-command setup (Claude Code)
+### Claude Code
+
+One command:
 
 ```bash
 ./scripts/connect.sh
 ```
 
-Prompts for your Bolna API key and registers the server under `--scope user`
-(personal to you, works across all your projects).
-
-### Option B — manual config, Claude Code
-
-Equivalent to Option A, either as a CLI command:
+or the equivalent by hand:
 
 ```bash
-claude mcp add --transport http bolna-mcp https://bolna-mcp-eta.vercel.app/api/mcp \
+claude mcp add --transport http bolna https://mcp.bolna.ai/api/mcp \
   --header "Authorization: Bearer <your BOLNA_API_KEY>" \
   --scope user
 ```
@@ -54,7 +59,7 @@ or by hand-editing `~/.claude.json` (or `.mcp.json` for a project-scoped copy):
   "mcpServers": {
     "bolna": {
       "type": "http",
-      "url": "https://bolna-mcp-eta.vercel.app/api/mcp",
+      "url": "https://mcp.bolna.ai/api/mcp",
       "headers": {
         "Authorization": "Bearer <your BOLNA_API_KEY>"
       }
@@ -63,10 +68,10 @@ or by hand-editing `~/.claude.json` (or `.mcp.json` for a project-scoped copy):
 }
 ```
 
-### Option C — manual config, Claude Desktop
+### Claude Desktop
 
-Claude Desktop's config only understands locally-run (stdio) servers, so
-reaching a remote HTTP server with a custom header needs the
+Desktop's config only understands locally-run (stdio) servers, so reaching a
+remote HTTP server with a custom header needs the
 [`mcp-remote`](https://www.npmjs.com/package/mcp-remote) bridge, which runs
 locally and forwards the header on your behalf. Add this to
 `claude_desktop_config.json`:
@@ -79,7 +84,7 @@ locally and forwards the header on your behalf. Add this to
       "args": [
         "-y",
         "mcp-remote",
-        "https://bolna-mcp-eta.vercel.app/api/mcp",
+        "https://mcp.bolna.ai/api/mcp",
         "--header",
         "Authorization: Bearer <your BOLNA_API_KEY>"
       ]
@@ -90,11 +95,84 @@ locally and forwards the header on your behalf. Add this to
 
 Restart Claude Desktop after editing the config.
 
+### Codex CLI
+
+Reads the key from an environment variable rather than the config file:
+
+```bash
+export BOLNA_API_KEY="<your BOLNA_API_KEY>"
+
+codex mcp add bolna \
+  --url https://mcp.bolna.ai/api/mcp \
+  --bearer-token-env-var BOLNA_API_KEY
+```
+
+### Cursor
+
+Add to `.cursor/mcp.json` (project) or `~/.cursor/mcp.json` (global):
+
+```json
+{
+  "mcpServers": {
+    "bolna": {
+      "url": "https://mcp.bolna.ai/api/mcp",
+      "headers": {
+        "Authorization": "Bearer <your BOLNA_API_KEY>"
+      }
+    }
+  }
+}
+```
+
+### Windsurf
+
+Add to `~/.codeium/windsurf/mcp_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "bolna": {
+      "serverUrl": "https://mcp.bolna.ai/api/mcp",
+      "headers": {
+        "Authorization": "Bearer <your BOLNA_API_KEY>"
+      }
+    }
+  }
+}
+```
+
+### Zed
+
+Add to `settings.json`. Zed doesn't support environment-variable
+interpolation in headers yet, so the key goes in directly:
+
+```json
+{
+  "context_servers": {
+    "bolna": {
+      "url": "https://mcp.bolna.ai/api/mcp",
+      "headers": {
+        "Authorization": "Bearer <your BOLNA_API_KEY>"
+      }
+    }
+  }
+}
+```
+
+### Any other MCP client
+
+Point it at:
+
+```
+URL:     https://mcp.bolna.ai/api/mcp
+Header:  Authorization: Bearer <your BOLNA_API_KEY>
+```
+
 ### claude.ai web/mobile
 
 Not currently supported — its custom-connector UI has no field for a
-personal Bearer token. Options A–C above (Claude Code or Desktop) are the
-only self-serve paths until real OAuth is in place.
+personal Bearer token. The CLI/config options above are the only self-serve
+paths until real OAuth is in place.
 
 ### Try it
 
@@ -122,8 +200,10 @@ The MCP endpoint is served at `http://localhost:3000/api/mcp`.
 
 ## Deploy
 
+Deployed under the **Bolna AI** Vercel team, aliased to `mcp.bolna.ai`:
+
 ```bash
-vercel deploy
+vercel deploy --prod --scope bolna-ai
 ```
 
 Set `BOLNA_API_KEY` as a Vercel environment variable only if you want a
