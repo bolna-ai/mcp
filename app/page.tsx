@@ -33,13 +33,13 @@ export default function Home() {
       <div style={{ marginTop: 50 }}>
         <pre>
           <strong>Setup Instructions:</strong>
-          {"\n\n"}
+          {"\n\n\n"}
           <strong>
             For most clients (Streamable HTTP) &mdash; Cursor, Windsurf, Zed,
             etc.:
           </strong>
-          {`
-{
+          {"\n\n"}
+          {`{
   "mcpServers": {
     "bolna": {
       "url": "https://mcp.bolna.ai/api/mcp",
@@ -48,19 +48,19 @@ export default function Home() {
       }
     }
   }
-}
-`}
+}`}
+          {"\n\n\n"}
           <strong>For Claude Code:</strong>
-          {`
-claude mcp add -s user -t http bolna https://mcp.bolna.ai/api/mcp -H "Authorization: Bearer <BOLNA_API_KEY>"
-`}
+          {"\n\n"}
+          {`claude mcp add -s user -t http bolna https://mcp.bolna.ai/api/mcp -H "Authorization: Bearer <BOLNA_API_KEY>"`}
+          {"\n\n\n"}
           <strong>For Codex CLI:</strong>
-          {`
-export BOLNA_API_KEY="<BOLNA_API_KEY>"
-codex mcp add bolna --url https://mcp.bolna.ai/api/mcp --bearer-token-env-var BOLNA_API_KEY
-`}
+          {"\n\n"}
+          {`export BOLNA_API_KEY="<BOLNA_API_KEY>"
+codex mcp add bolna --url https://mcp.bolna.ai/api/mcp --bearer-token-env-var BOLNA_API_KEY`}
+          {"\n\n\n"}
           <strong>Full documentation:</strong>
-          {"\n"}
+          {"\n\n"}
           <a href="https://github.com/bolna-ai/mcp">
             https://github.com/bolna-ai/mcp
           </a>
