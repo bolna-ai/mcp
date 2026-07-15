@@ -1,12 +1,9 @@
 import type { Metadata } from "next";
-import { GeistSans } from "geist/font/sans";
-import { GeistMono } from "geist/font/mono";
-import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Bolna MCP Server",
   description:
-    "Remote MCP server wrapping the Bolna Voice AI REST API — read and manage agents, place calls, and pull transcripts from Claude.",
+    "Remote MCP server wrapping the Bolna Voice AI REST API — read and manage agents, place calls, and pull transcripts from any MCP-compatible client.",
 };
 
 export default function RootLayout({
@@ -15,7 +12,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${GeistSans.variable} ${GeistMono.variable}`}>
+    <html lang="en">
       <body>{children}</body>
     </html>
   );
