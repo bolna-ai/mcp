@@ -25,8 +25,11 @@ export default function Home() {
         <code>https://mcp.bolna.ai/api/mcp</code>
         {"\n"}
         {"Docs:       "}
-        <a href="https://github.com/bolna-ai/mcp" style={{ color: "#3F5C8C" }}>
-          https://github.com/bolna-ai/mcp
+        <a
+          href="https://www.bolna.ai/docs/build-with-ai/mcp"
+          style={{ color: "#3F5C8C" }}
+        >
+          https://www.bolna.ai/docs/build-with-ai/mcp
         </a>
       </pre>
 
@@ -61,8 +64,8 @@ codex mcp add bolna --url https://mcp.bolna.ai/api/mcp --bearer-token-env-var BO
           {"\n\n\n"}
           <strong>Full documentation:</strong>
           {"\n\n"}
-          <a href="https://github.com/bolna-ai/mcp">
-            https://github.com/bolna-ai/mcp
+          <a href="https://www.bolna.ai/docs/build-with-ai/mcp">
+            https://www.bolna.ai/docs/build-with-ai/mcp
           </a>
         </pre>
       </div>

@@ -170,9 +170,14 @@ Header:  Authorization: Bearer <your BOLNA_API_KEY>
 
 ### claude.ai web/mobile
 
-Not currently supported — its custom-connector UI has no field for a
-personal Bearer token. The CLI/config options above are the only self-serve
-paths until real OAuth is in place.
+This server now implements real OAuth (via Bolna's Supabase-backed
+authorization server), so claude.ai's own "Add custom connector" flow
+(Settings → Connectors) should work with just the URL — no manually pasted
+token needed, since claude.ai handles the login/consent redirect itself the
+same way Claude Code does. This hasn't been separately verified on claude.ai
+web/mobile specifically yet (only Claude Code's CLI flow has been tested
+end-to-end so far) — the CLI/config options above remain the proven paths in
+the meantime.
 
 ### Try it
 
@@ -184,9 +189,19 @@ After connecting, start a new conversation and ask something like:
 
 ## Auth
 
-Pass your Bolna API key as a Bearer token in the `Authorization` header when
-connecting to this server. For local development, set `BOLNA_API_KEY` in
-`.env` and omit the header — the server falls back to it automatically.
+Two ways to connect:
+
+- **OAuth** — sign in through Bolna's own login (Supabase-backed). This is
+  what claude.ai's custom-connector UI and Claude Code's `Authenticate`
+  prompt use automatically; no manual token needed.
+- **Raw API key** — pass your own Bolna API key as a Bearer token in the
+  `Authorization` header, per the client examples above.
+
+Either credential is verified before being forwarded to `api.bolna.ai` — see
+the comment block at the top of [`src/lib/auth.ts`](src/lib/auth.ts) for how.
+
+For local development, set `BOLNA_API_KEY` in `.env` and omit the header —
+the server falls back to it automatically.
 
 ## Local dev
 
@@ -224,6 +239,10 @@ In the Inspector UI, connect with:
 
 Then use the Inspector's "List Tools" and "Call Tool" panels to exercise each
 of the 11 tools with valid and invalid input.
+
+## Privacy Policy
+
+See [mcp.bolna.ai/privacy](https://mcp.bolna.ai/privacy).
 
 ## License
 
