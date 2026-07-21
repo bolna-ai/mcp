@@ -1,0 +1,16 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "ai.bolna.mcp/server",
+  "description": "Remote MCP server for the Bolna Voice AI API: manage agents, calls, and phone numbers.",
+  "repository": {
+    "url": "https://github.com/bolna-ai/mcp",
+    "source": "github"
+  },
+  "version": "0.1.0",
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://mcp.bolna.ai/api/mcp"
+    }
+  ]
+}
