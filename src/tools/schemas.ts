@@ -1,9 +1,17 @@
 import { z } from "zod";
 
 // E.164: + followed by 1-15 digits, first digit non-zero.
-export const e164Phone = z
-  .string()
-  .regex(/^\+[1-9]\d{1,14}$/, "must be a valid E.164 phone number, e.g. +14155552671");
+// A factory, not a shared instance: two properties on the same tool
+// (recipient_phone_number/from_phone_number) both use this, and the JSON
+// Schema converter collapses reused Zod object references into a `$ref`
+// rather than repeating the definition. Claude's submission portal doesn't
+// resolve that `$ref` when displaying parameter types, so the second
+// property showed up as "missing type" — confirmed live 2026-07-21.
+export function e164Phone() {
+  return z
+    .string()
+    .regex(/^\+[1-9]\d{1,14}$/, "must be a valid E.164 phone number, e.g. +14155552671");
+}
 
 // §5: page_size default 10, hard cap 50 in the tool schema regardless of
 // what the Bolna API allows.

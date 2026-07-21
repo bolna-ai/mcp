@@ -74,7 +74,7 @@ export function registerReadTools(server: McpServer) {
         page_number: pageNumberSchema,
         page_size: pageSizeSchema,
       },
-      annotations: { readOnlyHint: true, openWorldHint: true },
+      annotations: { title: "List agents", readOnlyHint: true, openWorldHint: true },
     },
     async ({ page_number, page_size }, extra) => {
       const apiKey = getApiKey(extra as any);
@@ -110,7 +110,7 @@ export function registerReadTools(server: McpServer) {
       inputSchema: {
         agent_id: agentIdSchema,
       },
-      annotations: { readOnlyHint: true, openWorldHint: true },
+      annotations: { title: "Get agent details", readOnlyHint: true, openWorldHint: true },
     },
     async ({ agent_id }, extra) => {
       const apiKey = getApiKey(extra as any);
@@ -145,7 +145,7 @@ export function registerReadTools(server: McpServer) {
         page_number: pageNumberSchema,
         page_size: pageSizeSchema,
       },
-      annotations: { readOnlyHint: true, openWorldHint: true },
+      annotations: { title: "List agent call history", readOnlyHint: true, openWorldHint: true },
     },
     async ({ agent_id, from, to, page_number, page_size }, extra) => {
       const apiKey = getApiKey(extra as any);
@@ -207,7 +207,7 @@ export function registerReadTools(server: McpServer) {
       inputSchema: {
         execution_id: executionIdSchema,
       },
-      annotations: { readOnlyHint: true, openWorldHint: true },
+      annotations: { title: "Get call details", readOnlyHint: true, openWorldHint: true },
     },
     async ({ execution_id }, extra) => {
       const apiKey = getApiKey(extra as any);
@@ -230,7 +230,7 @@ export function registerReadTools(server: McpServer) {
       description:
         "Lists all phone numbers in the connected Bolna account, including the telephony provider and creation date. Use this to find a from-number when placing outbound calls or to check available numbers.",
       inputSchema: {},
-      annotations: { readOnlyHint: true, openWorldHint: true },
+      annotations: { title: "List phone numbers", readOnlyHint: true, openWorldHint: true },
     },
     async (_args, extra) => {
       const apiKey = getApiKey(extra as any);
@@ -275,7 +275,7 @@ export function registerReadTools(server: McpServer) {
         page_number: pageNumberSchema,
         page_size: pageSizeSchema,
       },
-      annotations: { readOnlyHint: true, openWorldHint: true },
+      annotations: { title: "List call batches", readOnlyHint: true, openWorldHint: true },
     },
     async ({ agent_id, page_number, page_size }, extra) => {
       const apiKey = getApiKey(extra as any);
@@ -315,7 +315,7 @@ export function registerReadTools(server: McpServer) {
       description:
         "Retrieves the connected Bolna account's profile, current wallet balance, and concurrency limits. Use this to check remaining balance before placing calls.",
       inputSchema: {},
-      annotations: { readOnlyHint: true, openWorldHint: true },
+      annotations: { title: "Get account info", readOnlyHint: true, openWorldHint: true },
     },
     async (_args, extra) => {
       const apiKey = getApiKey(extra as any);

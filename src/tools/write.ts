@@ -86,7 +86,7 @@ export function registerWriteTools(server: McpServer) {
         agent_config: agentConfigSchema,
         agent_prompts: agentPromptsSchema,
       },
-      annotations: { readOnlyHint: false, destructiveHint: false },
+      annotations: { title: "Create agent", readOnlyHint: false, destructiveHint: false },
     },
     async ({ agent_config, agent_prompts }, extra) => {
       const apiKey = getApiKey(extra as any);
@@ -113,7 +113,7 @@ export function registerWriteTools(server: McpServer) {
         agent_config: patchAgentConfigSchema.optional(),
         agent_prompts: patchAgentPromptsSchema.optional(),
       },
-      annotations: { readOnlyHint: false, destructiveHint: true },
+      annotations: { title: "Update agent", readOnlyHint: false, destructiveHint: true },
     },
     async ({ agent_id, agent_config, agent_prompts }, extra) => {
       const apiKey = getApiKey(extra as any);
@@ -153,7 +153,7 @@ export function registerWriteTools(server: McpServer) {
       inputSchema: {
         agent_id: agentIdSchema,
       },
-      annotations: { readOnlyHint: false, destructiveHint: true },
+      annotations: { title: "Delete agent", readOnlyHint: false, destructiveHint: true },
     },
     async ({ agent_id }, extra) => {
       const apiKey = getApiKey(extra as any);
@@ -178,11 +178,11 @@ export function registerWriteTools(server: McpServer) {
         "Initiates a real outbound phone call from a Bolna voice AI agent to the given recipient number. Optionally pass a from-number and dynamic variables for prompt personalization. This places a live call and consumes account balance. Returns the execution ID for tracking via get_execution.",
       inputSchema: {
         agent_id: agentIdSchema,
-        recipient_phone_number: e164Phone,
-        from_phone_number: e164Phone.optional(),
+        recipient_phone_number: e164Phone(),
+        from_phone_number: e164Phone().optional(),
         user_data: z.record(z.any()).optional(),
       },
-      annotations: { readOnlyHint: false, destructiveHint: true },
+      annotations: { title: "Start outbound call", readOnlyHint: false, destructiveHint: true },
     },
     async (
       { agent_id, recipient_phone_number, from_phone_number, user_data },
