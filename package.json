@@ -8,7 +8,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "build:mcpb-server": "esbuild src/stdio.ts --bundle --platform=node --target=node18 --format=cjs --outfile=mcpb/server/index.js",
+    "package:mcpb": "npm run build:mcpb-server && npx @anthropic-ai/mcpb pack mcpb bolna-mcp.mcpb"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.26.0",
@@ -22,6 +24,7 @@
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
+    "esbuild": "^0.28.1",
     "typescript": "^5.5.0"
   }
 }

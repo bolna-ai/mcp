@@ -159,6 +159,27 @@ interpolation in headers yet, so the key goes in directly:
 }
 ```
 
+### Claude Desktop (extension)
+
+Instead of the `mcp-remote` bridge above, you can install this as a proper
+[Desktop Extension](https://github.com/modelcontextprotocol/mcpb) (`.mcpb`) —
+a local, stdio-based build of the same 11 tools, packaged with a manifest so
+Claude Desktop can install it with one click and prompt you for your API key
+itself (no config file editing).
+
+Build it from source:
+
+```bash
+npm run package:mcpb   # bundles src/stdio.ts, packs mcpb/ into bolna-mcp.mcpb
+```
+
+Then double-click `bolna-mcp.mcpb`, or drag it into Claude Desktop's
+Settings → Extensions, and enter your Bolna API key when prompted.
+
+This local build talks directly to `api.bolna.ai` using only the raw API key
+path in [`src/lib/auth.ts`](src/lib/auth.ts) — OAuth is specific to the
+remote server and isn't used here.
+
 ### Any other MCP client
 
 Point it at:

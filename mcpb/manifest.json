@@ -1,0 +1,62 @@
+{
+  "manifest_version": "0.3",
+  "name": "bolna-mcp",
+  "display_name": "Bolna Voice AI",
+  "version": "0.1.0",
+  "description": "Manage Bolna voice AI agents, calls, and phone numbers from Claude.",
+  "long_description": "Local MCP server wrapping the Bolna Voice AI REST API. Lets Claude list and configure your voice AI agents, review call history and transcripts, check phone numbers and wallet balance, and place outbound calls on your behalf. Requires a Bolna API key from your Bolna dashboard.",
+  "author": {
+    "name": "Bolna",
+    "url": "https://github.com/bolna-ai"
+  },
+  "icon": "icon.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bolna-ai/mcp"
+  },
+  "homepage": "https://bolna.ai",
+  "documentation": "https://www.bolna.ai/docs/build-with-ai/mcp",
+  "support": "mailto:support@bolna.dev",
+  "license": "MIT",
+  "privacy_policies": ["https://mcp.bolna.ai/privacy"],
+  "keywords": ["voice ai", "telephony", "phone calls", "agents", "bolna"],
+  "server": {
+    "type": "node",
+    "entry_point": "server/index.js",
+    "mcp_config": {
+      "command": "node",
+      "args": ["${__dirname}/server/index.js"],
+      "env": {
+        "BOLNA_API_KEY": "${user_config.api_key}"
+      }
+    }
+  },
+  "user_config": {
+    "api_key": {
+      "type": "string",
+      "title": "Bolna API Key",
+      "description": "Your Bolna API key, from the Bolna dashboard.",
+      "required": true,
+      "sensitive": true
+    }
+  },
+  "tools": [
+    { "name": "list_agents", "description": "List agents in the account (id, name, status, created_at). Paginated." },
+    { "name": "get_agent", "description": "Full config of one agent by ID." },
+    { "name": "list_agent_executions", "description": "Call history for one agent. Paginated, defaults to the last 7 days." },
+    { "name": "get_execution", "description": "Full details of one call: transcript, status, cost, telephony data." },
+    { "name": "list_phone_numbers", "description": "Phone numbers on the account." },
+    { "name": "list_batches", "description": "Call batches for one agent." },
+    { "name": "get_user_info", "description": "Account profile, wallet balance, concurrency limits." },
+    { "name": "create_agent", "description": "Create a new agent. Returns its ID." },
+    { "name": "update_agent", "description": "Patch an existing agent's name, prompts, welcome message, webhook, or voice settings." },
+    { "name": "delete_agent", "description": "Permanently delete an agent. Irreversible." },
+    { "name": "start_outbound_call", "description": "Place a real outbound call from an agent. Spends account balance." }
+  ],
+  "tools_generated": false,
+  "compatibility": {
+    "runtimes": {
+      "node": ">=18.0.0"
+    }
+  }
+}
