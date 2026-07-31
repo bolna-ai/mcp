@@ -51,7 +51,9 @@
     { "name": "create_agent", "description": "Create a new agent. Returns its ID." },
     { "name": "update_agent", "description": "Patch an existing agent's name, prompts, welcome message, webhook, or voice settings." },
     { "name": "delete_agent", "description": "Permanently delete an agent. Irreversible." },
-    { "name": "start_outbound_call", "description": "Place a real outbound call from an agent. Spends account balance." }
+    { "name": "start_outbound_call", "description": "Place a real outbound call from an agent. Spends account balance." },
+    { "name": "search_docs", "description": "Search the Bolna documentation site for matching pages." },
+    { "name": "get_doc", "description": "Fetch the full markdown content of a Bolna documentation page." }
   ],
   "tools_generated": false,
   "compatibility": {

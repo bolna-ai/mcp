@@ -1,8 +1,8 @@
 # Bolna MCP Server
 
 Remote MCP server (Streamable HTTP) wrapping the [Bolna](https://bolna.ai) voice
-AI REST API (`https://api.bolna.ai`): 7 read tools, 4 write tools, TypeScript,
-deployed on Vercel via `mcp-handler`.
+AI REST API (`https://api.bolna.ai`): 7 read tools, 4 write tools, and 2
+documentation tools, TypeScript, deployed on Vercel via `mcp-handler`.
 
 **Live at [mcp.bolna.ai](https://mcp.bolna.ai)** — that page has the same
 connect instructions below with copy-paste buttons for each client.
@@ -29,6 +29,8 @@ docs are documented in the comment block at the top of
 | `update_agent` | Write | Patch an existing agent's name, prompts, welcome message, webhook, or voice settings. |
 | `delete_agent` | Write | Permanently delete an agent. Irreversible. |
 | `start_outbound_call` | Write | Place a real outbound call from an agent. Spends account balance. |
+| `search_docs` | Read | Search the Bolna documentation site for matching pages. |
+| `get_doc` | Read | Fetch the full markdown content of a Bolna documentation page. |
 
 ## Install & use
 
@@ -163,7 +165,7 @@ interpolation in headers yet, so the key goes in directly:
 
 Instead of the `mcp-remote` bridge above, you can install this as a proper
 [Desktop Extension](https://github.com/modelcontextprotocol/mcpb) (`.mcpb`) —
-a local, stdio-based build of the same 11 tools, packaged with a manifest so
+a local, stdio-based build of the same 13 tools, packaged with a manifest so
 Claude Desktop can install it with one click and prompt you for your API key
 itself (no config file editing).
 
@@ -259,7 +261,7 @@ In the Inspector UI, connect with:
   if `BOLNA_API_KEY` is set in `.env`)
 
 Then use the Inspector's "List Tools" and "Call Tool" panels to exercise each
-of the 11 tools with valid and invalid input.
+of the 13 tools with valid and invalid input.
 
 ## Privacy Policy
 

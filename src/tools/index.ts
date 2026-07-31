@@ -45,8 +45,10 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { registerReadTools } from "./read";
 import { registerWriteTools } from "./write";
+import { registerDocsTools } from "./docs";
 
 export function registerAllTools(server: McpServer) {
   registerReadTools(server);
   registerWriteTools(server);
+  registerDocsTools(server);
 }
