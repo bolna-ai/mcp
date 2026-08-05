@@ -57,6 +57,8 @@ import { registerSipTrunksTools } from "./sip-trunks";
 import { registerBatchesTools } from "./batches";
 import { registerInboundTools } from "./inbound";
 import { registerSubAccountsTools } from "./sub-accounts";
+import { registerKnowledgebaseTools } from "./knowledgebase";
+import { registerViolationsTools } from "./violations";
 
 export function registerAllTools(server: McpServer) {
   registerReadTools(server);
@@ -73,4 +75,6 @@ export function registerAllTools(server: McpServer) {
   registerBatchesTools(server);
   registerInboundTools(server);
   registerSubAccountsTools(server);
+  registerKnowledgebaseTools(server);
+  registerViolationsTools(server);
 }

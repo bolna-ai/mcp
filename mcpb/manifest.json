@@ -90,6 +90,11 @@
     { "name": "list_voices", "description": "Voices available for a TTS provider/model." },
     { "name": "list_providers", "description": "Third-party providers configured on the account (secrets masked)." },
     { "name": "remove_provider", "description": "Remove a configured provider by name." },
+    { "name": "create_knowledgebase", "description": "Create a knowledgebase by scraping a URL." },
+    { "name": "get_knowledgebase", "description": "A knowledgebase's file name, status, and settings." },
+    { "name": "list_knowledgebases", "description": "All knowledgebases on the account." },
+    { "name": "delete_knowledgebase", "description": "Permanently delete a knowledgebase." },
+    { "name": "list_violations", "description": "List flagged call violations, optionally filtered by status." },
     { "name": "get_user_info", "description": "Account profile, wallet balance, concurrency limits." },
     { "name": "search_docs", "description": "Search the Bolna documentation site for matching pages." },
     { "name": "get_doc", "description": "Fetch the full markdown content of a Bolna documentation page." }

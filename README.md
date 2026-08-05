@@ -1,7 +1,7 @@
 # Bolna MCP Server
 
 Remote MCP server (Streamable HTTP) wrapping the [Bolna](https://bolna.ai) voice
-AI REST API (`https://api.bolna.ai`): 52 tools covering nearly every documented
+AI REST API (`https://api.bolna.ai`): 57 tools covering nearly every documented
 Bolna endpoint, TypeScript, deployed on Vercel via `mcp-handler`.
 
 **Live at [mcp.bolna.ai](https://mcp.bolna.ai)** — that page has the same
@@ -31,7 +31,7 @@ as `api_key`.
 
 ## Available tools
 
-52 tools across 12 categories. "Write" tools flagged **Destructive** modify,
+57 tools across 14 categories. "Write" tools flagged **Destructive** modify,
 remove, or spend money and typically prompt for confirmation in MCP clients
 that respect tool annotations.
 
@@ -124,6 +124,21 @@ that respect tool annotations.
 | `list_providers` | Read | Third-party providers configured on the account (secrets masked). |
 | `remove_provider` | Write, Destructive | Remove a configured provider by name. |
 
+### Knowledgebase (RAG)
+
+| Tool | Type | Description |
+|---|---|---|
+| `create_knowledgebase` | Write | Create a knowledgebase by scraping a URL. PDF upload isn't supported here. |
+| `get_knowledgebase` | Read | A knowledgebase's file name, status, and settings. |
+| `list_knowledgebases` | Read | All knowledgebases on the account. |
+| `delete_knowledgebase` | Write, Destructive | Permanently delete a knowledgebase. |
+
+### Violations
+
+| Tool | Type | Description |
+|---|---|---|
+| `list_violations` | Read | List flagged call violations, optionally filtered by status. Paginated. |
+
 ### Account & documentation
 
 | Tool | Type | Description |
@@ -132,10 +147,12 @@ that respect tool annotations.
 | `search_docs` | Read | Search the Bolna documentation site for matching pages. |
 | `get_doc` | Read | Fetch the full markdown content of a Bolna documentation page. |
 
-Not exposed as a tool: adding a new provider (`POST /providers`) takes a
-third-party secret (e.g. a Twilio auth token) as its request body — that's
-left to the Bolna dashboard rather than a chat interface, since it would mean
-typing a real credential into an LLM conversation.
+Not exposed as a tool, all for the same reason — each needs either a raw
+file upload or a third-party secret as its request body, neither of which
+maps cleanly to a tool argument or belongs in a chat conversation:
+- `POST /providers` (add a provider) — takes a third-party credential (e.g. a Twilio auth token)
+- `POST /knowledgebase` with a PDF file (the URL variant is supported, above)
+- `POST /violations/submit` — takes an evidence screenshot/document
 
 ## Install & use
 
@@ -270,7 +287,7 @@ interpolation in headers yet, so the key goes in directly:
 
 Instead of the `mcp-remote` bridge above, you can install this as a proper
 [Desktop Extension](https://github.com/modelcontextprotocol/mcpb) (`.mcpb`) —
-a local, stdio-based build of the same 52 tools, packaged with a manifest so
+a local, stdio-based build of the same 57 tools, packaged with a manifest so
 Claude Desktop can install it with one click and prompt you for your API key
 itself (no config file editing).
 
