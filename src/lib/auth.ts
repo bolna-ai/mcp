@@ -15,9 +15,14 @@ import type { AuthInfo } from "@modelcontextprotocol/sdk/server/auth/types.js";
  *    algorithm. api.bolna.ai independently validates the same token against
  *    Supabase to resolve the account, so no user_id -> API key lookup
  *    exists or is needed in this server.
- * 2. A raw Bolna API key (`bn-...`) — passed through as before (phase 1),
- *    kept working for Claude Code/Cursor/etc. users who paste their own key
- *    directly rather than going through OAuth.
+ * 2. A raw Bolna API key — passed through as before (phase 1), kept working
+ *    for Claude Code/Cursor/etc. users who paste their own key directly
+ *    rather than going through OAuth. Covers both a main account's key
+ *    (`bn-...`) and a sub-account's own key (`sa-...`, returned by
+ *    create_sub_account/list_sub_accounts) — a sub-account key used to fall
+ *    through to the Supabase check below and fail, since it doesn't match
+ *    `bn-`, which meant connecting directly as a sub-account never worked.
+ *    Fixed 2026-07-31.
  *
  * For local development, set BOLNA_API_KEY and omit the Authorization
  * header entirely — this fallback only ever applies when no header is
@@ -37,7 +42,7 @@ export async function verifyToken(
     return { token: envKey, clientId: "local-dev", scopes: [] };
   }
 
-  if (bearerToken.startsWith("bn-")) {
+  if (bearerToken.startsWith("bn-") || bearerToken.startsWith("sa-")) {
     return { token: bearerToken, clientId: "direct-api-key", scopes: [] };
   }
 
@@ -64,6 +69,12 @@ export interface ToolExtra {
   authInfo?: AuthInfo;
 }
 
-export function getApiKey(extra: ToolExtra): string | undefined {
-  return extra?.authInfo?.token || process.env.BOLNA_API_KEY || undefined;
+/**
+ * `override` lets a single call target a different Bolna account than the
+ * one the connection authenticated with — e.g. a sub-account's key (from
+ * list_sub_accounts' api_key field) — without reconnecting. Every tool
+ * exposes this as an optional api_key argument.
+ */
+export function getApiKey(extra: ToolExtra, override?: string): string | undefined {
+  return override || extra?.authInfo?.token || process.env.BOLNA_API_KEY || undefined;
 }

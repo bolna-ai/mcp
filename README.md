@@ -1,8 +1,8 @@
 # Bolna MCP Server
 
 Remote MCP server (Streamable HTTP) wrapping the [Bolna](https://bolna.ai) voice
-AI REST API (`https://api.bolna.ai`): 7 read tools, 4 write tools, and 2
-documentation tools, TypeScript, deployed on Vercel via `mcp-handler`.
+AI REST API (`https://api.bolna.ai`): 52 tools covering nearly every documented
+Bolna endpoint, TypeScript, deployed on Vercel via `mcp-handler`.
 
 **Live at [mcp.bolna.ai](https://mcp.bolna.ai)** — that page has the same
 connect instructions below with copy-paste buttons for each client.
@@ -14,23 +14,128 @@ Endpoint corrections found while verifying tool paths against the live Bolna
 docs are documented in the comment block at the top of
 [`src/tools/index.ts`](src/tools/index.ts).
 
+## Sub-accounts and switching between accounts
+
+Sub-account API keys (format `sa-...`) work exactly like a main account's key
+(`bn-...`) — connect a separate client/connector with a sub-account's key as
+the Bearer token to work entirely within that sub-account.
+
+To switch accounts **within a single connected session** instead of
+reconnecting, every tool also accepts an optional `api_key` argument that
+overrides the connection's own credential for just that call. Get a
+sub-account's key from `list_sub_accounts`' `api_key` field, then pass it to
+any tool call to run that call against that sub-account instead of the main
+account — e.g. "list agents in sub-account X" resolves to calling
+`list_sub_accounts`, finding X's key, then `list_agents` with that key passed
+as `api_key`.
+
 ## Available tools
+
+52 tools across 12 categories. "Write" tools flagged **Destructive** modify,
+remove, or spend money and typically prompt for confirmation in MCP clients
+that respect tool annotations.
+
+### Agents & calls
 
 | Tool | Type | Description |
 |---|---|---|
 | `list_agents` | Read | List agents in the account (id, name, status, created_at). Paginated. |
 | `get_agent` | Read | Full config of one agent by ID. |
+| `create_agent` | Write | Create a new agent. Returns its ID. |
+| `update_agent` | Write, Destructive | Patch an existing agent's name, prompts, welcome message, webhook, or voice settings. |
+| `delete_agent` | Write, Destructive | Permanently delete an agent. Irreversible. |
+| `stop_agent_queued_calls` | Write, Destructive | Cancel every queued call for an agent. |
+| `start_outbound_call` | Write, Destructive | Place a real outbound call from an agent. Spends account balance. |
+| `stop_call` | Write, Destructive | Cancel a queued or scheduled call. |
+
+### Executions
+
+| Tool | Type | Description |
+|---|---|---|
 | `list_agent_executions` | Read | Call history for one agent. Paginated, defaults to the last 7 days. |
 | `get_execution` | Read | Full details of one call: transcript, status, cost, telephony data. |
-| `list_phone_numbers` | Read | Phone numbers on the account. |
+| `get_execution_raw_logs` | Read | Raw pipeline logs (transcriber/LLM/synthesizer) for a call. |
+| `list_batch_executions` | Read | Every call execution within a batch. Paginated. |
+
+### Batches
+
+| Tool | Type | Description |
+|---|---|---|
+| `create_batch` | Write | Create a batch of outbound calls from a list of recipients. |
+| `get_batch` | Read | A batch's status, schedule, and contact counts. |
 | `list_batches` | Read | Call batches for one agent. |
+| `schedule_batch` | Write, Destructive | Schedule a batch to start calling. Spends account balance. |
+| `stop_batch` | Write, Destructive | Halt a running or queued batch. |
+| `delete_batch` | Write, Destructive | Permanently delete a batch. |
+
+### Dispositions (structured call extraction)
+
+| Tool | Type | Description |
+|---|---|---|
+| `list_dispositions` | Read | List dispositions, optionally scoped to an agent. |
+| `get_disposition` | Read | Retrieve a single disposition. |
+| `create_disposition` | Write | Create a disposition linked to an agent. |
+| `bulk_create_dispositions` | Write | Atomically create multiple dispositions for one agent. |
+| `update_disposition` | Write, Destructive | Update a disposition (may fork a private copy — Bolna's copy-on-write). |
+| `delete_disposition` | Write, Destructive | Permanently delete a disposition. |
+| `test_dispositions` | Read | Run an agent's dispositions against a sample transcript. |
+
+### Phone numbers & inbound
+
+| Tool | Type | Description |
+|---|---|---|
+| `list_phone_numbers` | Read | Phone numbers on the account. |
+| `search_phone_numbers` | Read | Search phone numbers available for purchase. |
+| `buy_phone_number` | Write, Destructive | Purchase a phone number. Real recurring charge. |
+| `delete_phone_number` | Write, Destructive | Remove a phone number and stop its billing. |
+| `setup_inbound_agent` | Write | Route inbound calls on a number to an agent, optionally with an IVR menu. |
+| `unlink_inbound_agent` | Write, Destructive | Remove inbound routing from a number. |
+
+### SIP trunks (bring your own telephony)
+
+| Tool | Type | Description |
+|---|---|---|
+| `create_sip_trunk` | Write | Create a SIP trunk with gateway and auth config. |
+| `get_sip_trunk` | Read | Full details of a SIP trunk. |
+| `list_sip_trunks` | Read | All SIP trunks on the account. |
+| `update_sip_trunk` | Write, Destructive | Partially update a SIP trunk. |
+| `delete_sip_trunk` | Write, Destructive | Permanently delete a trunk and its gateways/numbers. |
+| `add_trunk_number` | Write | Add a DID phone number to a trunk. |
+| `remove_trunk_number` | Write, Destructive | Remove a number from a trunk. |
+| `list_trunk_numbers` | Read | Numbers assigned to a trunk. |
+
+### Sub-accounts (enterprise)
+
+| Tool | Type | Description |
+|---|---|---|
+| `create_sub_account` | Write | Create an isolated sub-account workspace. Requires org admin access. |
+| `list_sub_accounts` | Read | All sub-accounts in the organization. |
+| `update_sub_account` | Write, Destructive | Update a sub-account's name or concurrency limits. |
+| `delete_sub_account` | Write, Destructive | Permanently delete a sub-account and all its data. |
+| `get_sub_account_usage` | Read | Usage and cost breakdown for one sub-account. |
+| `get_all_sub_accounts_usage` | Read | Usage and cost breakdown for every sub-account. |
+
+### Voice & providers
+
+| Tool | Type | Description |
+|---|---|---|
+| `list_tts_providers` | Read | TTS providers and models Bolna supports. |
+| `list_voices` | Read | Voices available for a TTS provider/model. |
+| `list_providers` | Read | Third-party providers configured on the account (secrets masked). |
+| `remove_provider` | Write, Destructive | Remove a configured provider by name. |
+
+### Account & documentation
+
+| Tool | Type | Description |
+|---|---|---|
 | `get_user_info` | Read | Account profile, wallet balance, concurrency limits. |
-| `create_agent` | Write | Create a new agent. Returns its ID. |
-| `update_agent` | Write | Patch an existing agent's name, prompts, welcome message, webhook, or voice settings. |
-| `delete_agent` | Write | Permanently delete an agent. Irreversible. |
-| `start_outbound_call` | Write | Place a real outbound call from an agent. Spends account balance. |
 | `search_docs` | Read | Search the Bolna documentation site for matching pages. |
 | `get_doc` | Read | Fetch the full markdown content of a Bolna documentation page. |
+
+Not exposed as a tool: adding a new provider (`POST /providers`) takes a
+third-party secret (e.g. a Twilio auth token) as its request body — that's
+left to the Bolna dashboard rather than a chat interface, since it would mean
+typing a real credential into an LLM conversation.
 
 ## Install & use
 
@@ -165,7 +270,7 @@ interpolation in headers yet, so the key goes in directly:
 
 Instead of the `mcp-remote` bridge above, you can install this as a proper
 [Desktop Extension](https://github.com/modelcontextprotocol/mcpb) (`.mcpb`) —
-a local, stdio-based build of the same 13 tools, packaged with a manifest so
+a local, stdio-based build of the same 52 tools, packaged with a manifest so
 Claude Desktop can install it with one click and prompt you for your API key
 itself (no config file editing).
 
@@ -261,7 +366,7 @@ In the Inspector UI, connect with:
   if `BOLNA_API_KEY` is set in `.env`)
 
 Then use the Inspector's "List Tools" and "Call Tool" panels to exercise each
-of the 13 tools with valid and invalid input.
+of the 13 core tools with valid and invalid input.
 
 ## Privacy Policy
 

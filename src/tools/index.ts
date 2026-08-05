@@ -46,9 +46,31 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { registerReadTools } from "./read";
 import { registerWriteTools } from "./write";
 import { registerDocsTools } from "./docs";
+import { registerAgentExtraTools } from "./agent-extra";
+import { registerCallsTools } from "./calls";
+import { registerExecutionsTools } from "./executions";
+import { registerVoiceTools } from "./voice";
+import { registerProvidersTools } from "./providers";
+import { registerPhoneNumbersTools } from "./phone-numbers";
+import { registerDispositionsTools } from "./dispositions";
+import { registerSipTrunksTools } from "./sip-trunks";
+import { registerBatchesTools } from "./batches";
+import { registerInboundTools } from "./inbound";
+import { registerSubAccountsTools } from "./sub-accounts";
 
 export function registerAllTools(server: McpServer) {
   registerReadTools(server);
   registerWriteTools(server);
   registerDocsTools(server);
+  registerAgentExtraTools(server);
+  registerCallsTools(server);
+  registerExecutionsTools(server);
+  registerVoiceTools(server);
+  registerProvidersTools(server);
+  registerPhoneNumbersTools(server);
+  registerDispositionsTools(server);
+  registerSipTrunksTools(server);
+  registerBatchesTools(server);
+  registerInboundTools(server);
+  registerSubAccountsTools(server);
 }

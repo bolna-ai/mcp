@@ -3,7 +3,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { bolnaFetch } from "../lib/bolna-client";
 import { toErrorResult } from "../lib/errors";
 import { getApiKey } from "../lib/auth";
-import { agentIdSchema, e164Phone } from "./schemas";
+import { agentIdSchema, apiKeyOverrideSchema, e164Phone } from "./schemas";
 
 const jsonResult = (data: unknown) => ({
   content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }],
@@ -85,11 +85,12 @@ export function registerWriteTools(server: McpServer) {
       inputSchema: {
         agent_config: agentConfigSchema,
         agent_prompts: agentPromptsSchema,
+        api_key: apiKeyOverrideSchema(),
       },
       annotations: { title: "Create agent", readOnlyHint: false, destructiveHint: false },
     },
-    async ({ agent_config, agent_prompts }, extra) => {
-      const apiKey = getApiKey(extra as any);
+    async ({ agent_config, agent_prompts, api_key }, extra) => {
+      const apiKey = getApiKey(extra as any, api_key);
       try {
         const result = await bolnaFetch("/v2/agent", apiKey, {
           method: "POST",
@@ -112,11 +113,12 @@ export function registerWriteTools(server: McpServer) {
         agent_id: agentIdSchema,
         agent_config: patchAgentConfigSchema.optional(),
         agent_prompts: patchAgentPromptsSchema.optional(),
+        api_key: apiKeyOverrideSchema(),
       },
       annotations: { title: "Update agent", readOnlyHint: false, destructiveHint: true },
     },
-    async ({ agent_id, agent_config, agent_prompts }, extra) => {
-      const apiKey = getApiKey(extra as any);
+    async ({ agent_id, agent_config, agent_prompts, api_key }, extra) => {
+      const apiKey = getApiKey(extra as any, api_key);
       if (!agent_config && !agent_prompts) {
         return {
           content: [
@@ -152,11 +154,12 @@ export function registerWriteTools(server: McpServer) {
         "Permanently deletes a Bolna agent and its related data, including batches and execution history. This cannot be undone.",
       inputSchema: {
         agent_id: agentIdSchema,
+        api_key: apiKeyOverrideSchema(),
       },
       annotations: { title: "Delete agent", readOnlyHint: false, destructiveHint: true },
     },
-    async ({ agent_id }, extra) => {
-      const apiKey = getApiKey(extra as any);
+    async ({ agent_id, api_key }, extra) => {
+      const apiKey = getApiKey(extra as any, api_key);
       try {
         const result = await bolnaFetch(
           `/v2/agent/${encodeURIComponent(agent_id)}`,
@@ -181,14 +184,15 @@ export function registerWriteTools(server: McpServer) {
         recipient_phone_number: e164Phone(),
         from_phone_number: e164Phone().optional(),
         user_data: z.record(z.any()).optional(),
+        api_key: apiKeyOverrideSchema(),
       },
       annotations: { title: "Start outbound call", readOnlyHint: false, destructiveHint: true },
     },
     async (
-      { agent_id, recipient_phone_number, from_phone_number, user_data },
+      { agent_id, recipient_phone_number, from_phone_number, user_data, api_key },
       extra
     ) => {
-      const apiKey = getApiKey(extra as any);
+      const apiKey = getApiKey(extra as any, api_key);
       try {
         const result = await bolnaFetch("/call", apiKey, {
           method: "POST",

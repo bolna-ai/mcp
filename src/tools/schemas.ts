@@ -38,6 +38,25 @@ export const executionIdSchema = z
   .string()
   .min(1, "execution_id is required");
 
+export const batchIdSchema = z.string().min(1, "batch_id is required");
+export const dispositionIdSchema = z.string().min(1, "disposition_id is required");
+export const phoneNumberIdSchema = z.string().min(1, "phone_number_id is required");
+export const trunkIdSchema = z.string().min(1, "trunk_id is required");
+export const subAccountIdSchema = z.string().min(1, "sub_account_id is required");
+
+// Lets a single call target a different Bolna account than the one this
+// connection authenticated with — e.g. a sub-account's key from
+// list_sub_accounts' api_key field (format sa-...) — without reconnecting.
+// A factory for the same $ref-collapsing reason as e164Phone above.
+export function apiKeyOverrideSchema() {
+  return z
+    .string()
+    .optional()
+    .describe(
+      "Optional: use this specific Bolna API key for this call instead of the connected account's key. Pass a sub-account's key (get it from list_sub_accounts' api_key field, format sa-...) to operate within that sub-account instead of the main account."
+    );
+}
+
 /** Applies tool-schema-level pagination to an array the Bolna API returns unpaginated. */
 export function paginate<T>(items: T[], pageNumber: number, pageSize: number): T[] {
   const start = (pageNumber - 1) * pageSize;

@@ -3,9 +3,11 @@ import { BolnaApiError, MissingApiKeyError } from "./errors";
 const BOLNA_BASE_URL = process.env.BOLNA_BASE_URL || "https://api.bolna.ai";
 
 interface BolnaRequestOptions {
-  method?: "GET" | "POST" | "PATCH" | "DELETE";
+  method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
   query?: Record<string, string | number | undefined>;
   body?: unknown;
+  /** When set, body is sent as multipart/form-data instead of JSON (e.g. batch creation, which takes a CSV file). */
+  form?: FormData;
 }
 
 function buildUrl(path: string, query?: BolnaRequestOptions["query"]): string {
@@ -30,13 +32,16 @@ export async function bolnaFetch<T = unknown>(
 ): Promise<T> {
   if (!apiKey) throw new MissingApiKeyError();
 
+  // For multipart requests, fetch must set its own Content-Type (with the
+  // boundary) — setting it manually here would omit the boundary and break
+  // the upload, so the header is only added for the JSON path.
+  const headers: Record<string, string> = { Authorization: `Bearer ${apiKey}` };
+  if (!options.form) headers["Content-Type"] = "application/json";
+
   const res = await fetch(buildUrl(path, options.query), {
     method: options.method ?? "GET",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
+    headers,
+    body: options.form ?? (options.body !== undefined ? JSON.stringify(options.body) : undefined),
   });
 
   const text = await res.text();

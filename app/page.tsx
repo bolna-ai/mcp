@@ -31,6 +31,11 @@ export default function Home() {
         >
           https://www.bolna.ai/docs/build-with-ai/mcp
         </a>
+        {"\n"}
+        {"Privacy:    "}
+        <a href="/privacy" style={{ color: "#3F5C8C" }}>
+          https://mcp.bolna.ai/privacy
+        </a>
       </pre>
 
       <div style={{ marginTop: 50 }}>

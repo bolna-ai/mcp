@@ -5,6 +5,7 @@ import { toErrorResult } from "../lib/errors";
 import { getApiKey } from "../lib/auth";
 import {
   agentIdSchema,
+  apiKeyOverrideSchema,
   executionIdSchema,
   pageNumberSchema,
   pageSizeSchema,
@@ -73,11 +74,12 @@ export function registerReadTools(server: McpServer) {
       inputSchema: {
         page_number: pageNumberSchema,
         page_size: pageSizeSchema,
+        api_key: apiKeyOverrideSchema(),
       },
       annotations: { title: "List agents", readOnlyHint: true, openWorldHint: true },
     },
-    async ({ page_number, page_size }, extra) => {
-      const apiKey = getApiKey(extra as any);
+    async ({ page_number, page_size, api_key }, extra) => {
+      const apiKey = getApiKey(extra as any, api_key);
       try {
         const agents = await bolnaFetch<
           Array<{ id: string; agent_name: string; agent_status: string; created_at: string }>
@@ -109,11 +111,12 @@ export function registerReadTools(server: McpServer) {
         "Retrieves the full configuration of a single Bolna voice AI agent by ID, including prompts, model settings, voice settings, and tasks. Use list_agents first if the agent ID is unknown.",
       inputSchema: {
         agent_id: agentIdSchema,
+        api_key: apiKeyOverrideSchema(),
       },
       annotations: { title: "Get agent details", readOnlyHint: true, openWorldHint: true },
     },
-    async ({ agent_id }, extra) => {
-      const apiKey = getApiKey(extra as any);
+    async ({ agent_id, api_key }, extra) => {
+      const apiKey = getApiKey(extra as any, api_key);
       try {
         const agent = await bolnaFetch(
           `/v2/agent/${encodeURIComponent(agent_id)}`,
@@ -144,11 +147,12 @@ export function registerReadTools(server: McpServer) {
           .optional(),
         page_number: pageNumberSchema,
         page_size: pageSizeSchema,
+        api_key: apiKeyOverrideSchema(),
       },
       annotations: { title: "List agent call history", readOnlyHint: true, openWorldHint: true },
     },
-    async ({ agent_id, from, to, page_number, page_size }, extra) => {
-      const apiKey = getApiKey(extra as any);
+    async ({ agent_id, from, to, page_number, page_size, api_key }, extra) => {
+      const apiKey = getApiKey(extra as any, api_key);
       try {
         const now = new Date();
         const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
@@ -206,11 +210,12 @@ export function registerReadTools(server: McpServer) {
         "Retrieves full details of a single call execution by ID, including the conversation transcript, call status, duration, telephony data, and cost. Use list_agent_executions to find execution IDs.",
       inputSchema: {
         execution_id: executionIdSchema,
+        api_key: apiKeyOverrideSchema(),
       },
       annotations: { title: "Get call details", readOnlyHint: true, openWorldHint: true },
     },
-    async ({ execution_id }, extra) => {
-      const apiKey = getApiKey(extra as any);
+    async ({ execution_id, api_key }, extra) => {
+      const apiKey = getApiKey(extra as any, api_key);
       try {
         const execution = await bolnaFetch(
           `/executions/${encodeURIComponent(execution_id)}`,
@@ -229,11 +234,11 @@ export function registerReadTools(server: McpServer) {
       title: "List phone numbers",
       description:
         "Lists all phone numbers in the connected Bolna account, including the telephony provider and creation date. Use this to find a from-number when placing outbound calls or to check available numbers.",
-      inputSchema: {},
+      inputSchema: { api_key: apiKeyOverrideSchema() },
       annotations: { title: "List phone numbers", readOnlyHint: true, openWorldHint: true },
     },
-    async (_args, extra) => {
-      const apiKey = getApiKey(extra as any);
+    async ({ api_key }, extra) => {
+      const apiKey = getApiKey(extra as any, api_key);
       try {
         const numbers = await bolnaFetch<
           Array<{
@@ -274,11 +279,12 @@ export function registerReadTools(server: McpServer) {
         agent_id: agentIdSchema,
         page_number: pageNumberSchema,
         page_size: pageSizeSchema,
+        api_key: apiKeyOverrideSchema(),
       },
       annotations: { title: "List call batches", readOnlyHint: true, openWorldHint: true },
     },
-    async ({ agent_id, page_number, page_size }, extra) => {
-      const apiKey = getApiKey(extra as any);
+    async ({ agent_id, page_number, page_size, api_key }, extra) => {
+      const apiKey = getApiKey(extra as any, api_key);
       try {
         const batches = await bolnaFetch<
           Array<{
@@ -314,11 +320,11 @@ export function registerReadTools(server: McpServer) {
       title: "Get account info",
       description:
         "Retrieves the connected Bolna account's profile, current wallet balance, and concurrency limits. Use this to check remaining balance before placing calls.",
-      inputSchema: {},
+      inputSchema: { api_key: apiKeyOverrideSchema() },
       annotations: { title: "Get account info", readOnlyHint: true, openWorldHint: true },
     },
-    async (_args, extra) => {
-      const apiKey = getApiKey(extra as any);
+    async ({ api_key }, extra) => {
+      const apiKey = getApiKey(extra as any, api_key);
       try {
         const user = await bolnaFetch("/user/me", apiKey);
         return jsonResult(user);
