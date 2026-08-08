@@ -92,9 +92,13 @@ export function registerWriteTools(server: McpServer) {
     async ({ agent_config, agent_prompts, api_key }, extra) => {
       const apiKey = getApiKey(extra as any, api_key);
       try {
+        // Stamped "mcp" (not caller-configurable) so Bolna can attribute
+        // agents created through this MCP server, distinct from
+        // dashboard/API/agent-builder creations. Top-level key, per API contract
+        // — NOT nested inside agent_config.
         const result = await bolnaFetch("/v2/agent", apiKey, {
           method: "POST",
-          body: { agent_config, agent_prompts },
+          body: { agent_config, agent_prompts, creation_source: "mcp" },
         });
         return jsonResult(result);
       } catch (err) {
