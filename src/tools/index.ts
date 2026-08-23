@@ -59,6 +59,9 @@ import { registerInboundTools } from "./inbound";
 import { registerSubAccountsTools } from "./sub-accounts";
 import { registerKnowledgebaseTools } from "./knowledgebase";
 import { registerViolationsTools } from "./violations";
+import { registerWorkflowsTools } from "./workflows";
+import { registerWorkflowCampaignsTools } from "./workflow-campaigns";
+import { registerWorkflowExecutionsTools } from "./workflow-executions";
 
 export function registerAllTools(server: McpServer) {
   registerReadTools(server);
@@ -77,4 +80,7 @@ export function registerAllTools(server: McpServer) {
   registerSubAccountsTools(server);
   registerKnowledgebaseTools(server);
   registerViolationsTools(server);
+  registerWorkflowsTools(server);
+  registerWorkflowCampaignsTools(server);
+  registerWorkflowExecutionsTools(server);
 }

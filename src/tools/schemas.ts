@@ -43,6 +43,23 @@ export const dispositionIdSchema = z.string().min(1, "disposition_id is required
 export const phoneNumberIdSchema = z.string().min(1, "phone_number_id is required");
 export const trunkIdSchema = z.string().min(1, "trunk_id is required");
 export const subAccountIdSchema = z.string().min(1, "sub_account_id is required");
+export const workflowIdSchema = z.string().min(1, "workflow_id is required");
+export const workflowCampaignIdSchema = z.string().min(1, "campaign_id is required");
+export const workflowExecutionIdSchema = z.string().min(1, "execution_id is required");
+
+// A contact/entry for a workflow run or campaign upload. Only reference_id,
+// mobile_number, name, and email are documented system fields — everything
+// else (declared by the workflow's start node, or nested under
+// custom_fields) is passed through as-is rather than re-modeled here.
+export const workflowContactSchema = z
+  .object({
+    reference_id: z.string().optional(),
+    mobile_number: e164Phone().optional(),
+    name: z.string().optional(),
+    email: z.string().email().optional(),
+    custom_fields: z.record(z.any()).optional(),
+  })
+  .passthrough();
 
 // Lets a single call target a different Bolna account than the one this
 // connection authenticated with — e.g. a sub-account's key from

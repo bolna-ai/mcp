@@ -1,7 +1,7 @@
 # Bolna MCP Server
 
 Remote MCP server (Streamable HTTP) wrapping the [Bolna](https://bolna.ai) voice
-AI REST API (`https://api.bolna.ai`): 57 tools covering nearly every documented
+AI REST API (`https://api.bolna.ai`): 84 tools covering nearly every documented
 Bolna endpoint, TypeScript, deployed on Vercel via `mcp-handler`.
 
 **Live at [mcp.bolna.ai](https://mcp.bolna.ai)** — that page has the same
@@ -31,7 +31,7 @@ as `api_key`.
 
 ## Available tools
 
-57 tools across 14 categories. "Write" tools flagged **Destructive** modify,
+84 tools across 17 categories. "Write" tools flagged **Destructive** modify,
 remove, or spend money and typically prompt for confirmation in MCP clients
 that respect tool annotations.
 
@@ -138,6 +138,57 @@ that respect tool annotations.
 | Tool | Type | Description |
 |---|---|---|
 | `list_violations` | Read | List flagged call violations, optionally filtered by status. Paginated. |
+
+### Workflows
+
+Multi-step, per-contact automations (call an agent, branch on the outcome,
+wait, call an API, message over WhatsApp, retry, and so on) — distinct from
+a single agent's own conversation. A workflow is edited as a draft, then
+published as an immutable version before it can run.
+
+| Tool | Type | Description |
+|---|---|---|
+| `create_workflow` | Write | Create a new (empty) workflow. |
+| `list_workflows` | Read | List workflows, optionally filtered by name. Paginated. |
+| `get_workflow` | Read | A workflow's status plus its full draft/published version history. |
+| `rename_workflow` | Write, Destructive | Rename a workflow. |
+| `delete_workflow` | Write, Destructive | Permanently delete a workflow and every version. |
+| `get_workflow_draft` | Read | The current editable draft definition and its revision number. |
+| `save_workflow_draft` | Write, Destructive | Overwrite the draft's node graph. Requires the current revision to avoid clobbering concurrent edits. |
+| `validate_workflow` | Read | Check the saved draft for errors before publishing. |
+| `publish_workflow` | Write, Destructive | Freeze the draft as a new immutable published version. |
+| `get_workflow_version` | Read | Retrieve a specific published version's node graph. |
+| `run_workflow` | Write, Destructive | Run a single contact through the latest published version. Places real calls/messages. |
+| `list_workflow_node_types` | Read | Every node type the engine supports, with its config parameters. |
+
+### Workflow campaigns
+
+Runs many contacts through one workflow version as a batch.
+
+| Tool | Type | Description |
+|---|---|---|
+| `create_workflow_campaign` | Write | Create a campaign pinned to a workflow version. |
+| `list_workflow_campaigns` | Read | List campaigns, optionally filtered by workflow, status, or kind. Paginated. |
+| `get_workflow_campaign` | Read | A campaign's status and totals, plus entry/validation-error breakdowns. |
+| `delete_workflow_campaign` | Write, Destructive | Delete an empty draft campaign. |
+| `upload_workflow_campaign_entries` | Write | Add contacts to a campaign (CSV/JSON columns beyond the standard fields go in `custom_fields`). |
+| `list_workflow_campaign_entries` | Read | List a campaign's uploaded contacts. Paginated. |
+| `get_workflow_campaign_entries_template` | Read | The CSV header row the campaign's pinned version expects. |
+| `start_workflow_campaign` | Write, Destructive | Start dispatching a campaign's pending entries. Spends account balance. |
+| `pause_workflow_campaign` | Write, Destructive | Pause a running campaign's dispatching. |
+| `resume_workflow_campaign` | Write, Destructive | Resume a paused campaign. |
+| `abort_workflow_campaign` | Write, Destructive | Permanently terminate a campaign. Cannot be undone. |
+| `list_workflow_campaign_executions` | Read | List a campaign's per-contact executions. Paginated. |
+| `get_workflow_campaign_report` | Read | Aggregated execution/termination/per-node funnel counts. |
+
+### Workflow executions
+
+A single contact's run through a workflow, created by `run_workflow` or a campaign.
+
+| Tool | Type | Description |
+|---|---|---|
+| `get_workflow_execution` | Read | Current node, node-by-node history, and recent timeline events. |
+| `cancel_workflow_execution` | Write, Destructive | Terminate a running execution. |
 
 ### Account & documentation
 
@@ -287,7 +338,7 @@ interpolation in headers yet, so the key goes in directly:
 
 Instead of the `mcp-remote` bridge above, you can install this as a proper
 [Desktop Extension](https://github.com/modelcontextprotocol/mcpb) (`.mcpb`) —
-a local, stdio-based build of the same 57 tools, packaged with a manifest so
+a local, stdio-based build of the same 84 tools, packaged with a manifest so
 Claude Desktop can install it with one click and prompt you for your API key
 itself (no config file editing).
 
