@@ -44,6 +44,18 @@ function describeAuth(header: string | null): string {
   return "oauth-token";
 }
 
+// Pulls the JSON-RPC result/error out of a streamable-HTTP SSE response
+// body (lines like "data: {...}"), or a bare JSON response body.
+function parseRpcResponseBody(text: string): { result?: unknown; error?: unknown } | null {
+  const dataLine = text.split("\n").find((line) => line.startsWith("data: "));
+  const jsonText = dataLine ? dataLine.slice("data: ".length) : text;
+  try {
+    return JSON.parse(jsonText);
+  } catch {
+    return null;
+  }
+}
+
 /**
  * The MCP SDK rejects malformed JSON-RPC bodies (HTTP 400, code -32700)
  * deep inside its transport layer, before mcp-handler or any tool code
@@ -51,12 +63,18 @@ function describeAuth(header: string | null): string {
  * what actually sent them. This peeks at the body first so a malformed
  * request leaves a usable trace in `vercel logs`, then forwards the
  * request on unchanged (bytes and all) to the real handler.
+ *
+ * For a well-formed `tools/call`, it also logs which tool ran, how long
+ * it took, and whether it errored — the thing `vercel logs` can't show
+ * on its own, since every tool shares the same /api/mcp route/method.
  */
 async function loggedPost(req: Request): Promise<Response> {
   const bodyText = await req.text();
+  let parsedBody: unknown;
   let valid = false;
   try {
-    valid = isJsonRpcShaped(JSON.parse(bodyText));
+    parsedBody = JSON.parse(bodyText);
+    valid = isJsonRpcShaped(parsedBody);
   } catch {
     valid = false;
   }
@@ -70,13 +88,52 @@ async function loggedPost(req: Request): Promise<Response> {
       bodyPreview: bodyText.slice(0, 500),
     });
   }
+
   const forwarded = new Request(req.url, {
     method: req.method,
     headers: req.headers,
     body: bodyText,
     signal: req.signal,
   });
-  return authHandler(forwarded);
+
+  const rpcBody = parsedBody as Record<string, unknown> | undefined;
+  const toolName =
+    valid && !Array.isArray(rpcBody) && rpcBody?.method === "tools/call"
+      ? ((rpcBody.params as Record<string, unknown> | undefined)?.name as string | undefined)
+      : undefined;
+
+  if (!toolName) {
+    return authHandler(forwarded);
+  }
+
+  const start = Date.now();
+  const response = await authHandler(forwarded);
+  const durationMs = Date.now() - start;
+
+  // Response bodies here are small JSON tool results, so buffering the
+  // clone to inspect it costs single-digit milliseconds — worth paying
+  // to guarantee the log line is written before a serverless function
+  // freezes, rather than racing a fire-and-forget background read.
+  let toolError: boolean | null = null;
+  try {
+    const rpc = parseRpcResponseBody(await response.clone().text());
+    if (rpc?.error) toolError = true;
+    else if (rpc?.result && typeof rpc.result === "object") {
+      toolError = (rpc.result as Record<string, unknown>).isError === true;
+    }
+  } catch {
+    // Leave toolError as null — inspecting the response is best-effort.
+  }
+
+  console.log("[mcp] tool_call", {
+    tool: toolName,
+    httpStatus: response.status,
+    error: toolError,
+    durationMs,
+    auth: describeAuth(req.headers.get("authorization")),
+  });
+
+  return response;
 }
 
 export { authHandler as GET, loggedPost as POST, authHandler as DELETE };
