@@ -16,7 +16,7 @@
   },
   "homepage": "https://bolna.ai",
   "documentation": "https://www.bolna.ai/docs/build-with-ai/mcp",
-  "support": "mailto:support@bolna.dev",
+  "support": "mailto:support@bolna.ai",
   "license": "MIT",
   "privacy_policies": ["https://mcp.bolna.ai/privacy"],
   "keywords": ["voice ai", "telephony", "phone calls", "agents", "bolna"],

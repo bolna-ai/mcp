@@ -17,10 +17,11 @@ export default function PrivacyPolicy() {
       <p>
         This policy covers the Bolna MCP server (<code>mcp.bolna.ai</code>),
         which lets Claude and other MCP-compatible AI clients (Codex, Cursor,
-        Windsurf, and others) read and manage your Bolna voice AI account on
-        your behalf. It describes specifically what this server does with
-        your data — it does not replace Bolna&apos;s main privacy policy,
-        which governs your Bolna account generally.
+        Windsurf, and others) read and manage your{" "}
+        <a href="https://bolna.ai">Bolna</a> voice AI account on your behalf.
+        It describes specifically what this server does with your data — it
+        does not replace Bolna&apos;s main privacy policy, which governs your
+        Bolna account generally.
       </p>
 
       <h2>Data collection practices</h2>
@@ -101,7 +102,7 @@ export default function PrivacyPolicy() {
       <h2>Contact information</h2>
       <p>
         Questions about this policy or the Bolna MCP server can be sent to{" "}
-        <a href="mailto:support@bolna.dev">support@bolna.dev</a>.
+        <a href="mailto:support@bolna.ai">support@bolna.ai</a>.
       </p>
     </main>
   );
