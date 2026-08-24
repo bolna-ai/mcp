@@ -1,9 +1,17 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://mcp.bolna.ai"),
   title: "Bolna MCP Server",
   description:
     "Remote MCP server wrapping the Bolna Voice AI REST API — read and manage agents, place calls, and pull transcripts from any MCP-compatible client.",
+  twitter: {
+    card: "summary",
+    title: "Bolna MCP Server",
+    description:
+      "Remote MCP server wrapping the Bolna Voice AI REST API — read and manage agents, place calls, and pull transcripts from any MCP-compatible client.",
+    images: ["/icon.png"],
+  },
 };
 
 export default function RootLayout({

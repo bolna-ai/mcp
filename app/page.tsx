@@ -3,6 +3,16 @@ import { MASCOT_GRID } from "@/lib/mascot";
 export default function Home() {
   return (
     <main>
+      <h1
+        style={{
+          fontFamily: "monospace",
+          fontSize: "1em",
+          fontWeight: "bold",
+          margin: 0,
+        }}
+      >
+        Bolna MCP Server
+      </h1>
       <pre>
         {MASCOT_GRID.map((row, r) => (
           <span key={r}>
