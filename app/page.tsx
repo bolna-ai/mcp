@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import { MASCOT_GRID } from "@/lib/mascot";
 
 const TOOL_CATEGORIES: { category: string; tools: string[] }[] = [
@@ -237,19 +238,50 @@ codex mcp add bolna --url https://mcp.bolna.ai/api/mcp --bearer-token-env-var BO
       </div>
 
       <div style={{ marginTop: 50 }}>
-        <pre style={{ whiteSpace: "pre-wrap" }}>
-          <strong>Tools ({TOOL_COUNT}):</strong>
-          {"\n\n"}
-          {TOOL_CATEGORIES.map(({ category, tools }, i) => (
-            <span key={category}>
-              <strong>{category}</strong>
-              {"\n"}
-              {"  " + tools.join(", ")}
-              {i < TOOL_CATEGORIES.length - 1 ? "\n\n" : ""}
-            </span>
-          ))}
-        </pre>
+        <p style={{ fontFamily: "monospace", fontWeight: "bold", margin: "0 0 12px 0" }}>
+          Tools ({TOOL_COUNT}):
+        </p>
+        <table
+          style={{
+            fontFamily: "monospace",
+            fontSize: "0.9em",
+            borderCollapse: "collapse",
+          }}
+        >
+          <thead>
+            <tr>
+              <th style={tableHeaderStyle}>Category</th>
+              <th style={tableHeaderStyle}>Tool</th>
+            </tr>
+          </thead>
+          <tbody>
+            {TOOL_CATEGORIES.flatMap(({ category, tools }) =>
+              tools.map((tool, i) => (
+                <tr key={tool}>
+                  {i === 0 && (
+                    <td rowSpan={tools.length} style={tableCellStyle}>
+                      {category}
+                    </td>
+                  )}
+                  <td style={tableCellStyle}>{tool}</td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
       </div>
     </main>
   );
 }
+
+const tableCellStyle: CSSProperties = {
+  border: "1px solid #ccc",
+  padding: "4px 12px",
+  textAlign: "left",
+  verticalAlign: "top",
+};
+
+const tableHeaderStyle: CSSProperties = {
+  ...tableCellStyle,
+  fontWeight: "bold",
+};
