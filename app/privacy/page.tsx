@@ -4,6 +4,21 @@ export const metadata: Metadata = {
   title: "Privacy Policy — Bolna MCP Server",
   description:
     "What the Bolna MCP server does and does not do with your data.",
+  openGraph: {
+    title: "Privacy Policy — Bolna MCP Server",
+    description:
+      "What the Bolna MCP server does and does not do with your data.",
+    url: "https://mcp.bolna.ai/privacy",
+    type: "article",
+    images: ["/icon.png"],
+  },
+  twitter: {
+    card: "summary",
+    title: "Privacy Policy — Bolna MCP Server",
+    description:
+      "What the Bolna MCP server does and does not do with your data.",
+    images: ["/icon.png"],
+  },
 };
 
 export default function PrivacyPolicy() {
