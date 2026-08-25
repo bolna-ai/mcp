@@ -12,7 +12,9 @@ Dispositions (create_disposition / bulk_create_dispositions / test_dispositions 
 
 Every Pre-defined (\`is_objective: true\`) extraction needs a "couldn't determine" bucket (e.g. NA / Not_Specified / Unclear) alongside the real answers — never force a choice when the underlying question was never reached in the call. Use snake_case for \`name\`; Title_Case_With_Underscores for \`category\` and multi-word \`objective_options[].value\` (single words like Yes/No stay simple). Nested classification uses \`objective_options[].sub_options[]\`, evaluated only when its parent value is selected — at least one of \`is_subjective\`/\`is_objective\` must be true.
 
-For the full worked methodology — archetypes, anti-patterns, condition-writing rules, and a brief-gathering flow for thin requests — invoke this server's \`design_extraction\` prompt.`;
+For the full worked methodology — archetypes, anti-patterns, condition-writing rules, and a brief-gathering flow for thin requests — invoke this server's \`design_extraction\` prompt.
+
+Three more invokable prompts cover the rest of Bolna Agent Skills' methodology: \`design_voice_prompt\` (the rigid section structure, Hindi-first/English-second scripted lines, and variable notation a GPT-4.1 mini voice-agent prompt needs — also fixes an existing prompt from a pasted transcript), \`design_graph_agent\` (node/edge schema, deterministic-first routing, expression operators, and event injection for a multi-step graph agent), and \`diagnose_call\` (symptom-to-fix map for latency, interruption, hangup, webhook, and SIP issues, backed by \`latency_data\`/raw logs).`;
 
 // The richer, invokable counterpart to SERVER_INSTRUCTIONS above. Clients
 // that surface MCP `prompts` as user-invokable actions (confirmed: Claude
