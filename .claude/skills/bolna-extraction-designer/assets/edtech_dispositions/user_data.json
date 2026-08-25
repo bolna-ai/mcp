@@ -1,0 +1,194 @@
+[
+  {
+    "name": "customer_name",
+    "category": "User_Data",
+    "question": "You are an assistant scanning the transcript to extract the name of the contacted user, learner, parent, or customer.\n\nUse the full conversation for context, but extract the name only if it is clearly stated by the user, confirmed by the user when read back by the agent, or used by the agent in a way that the user implicitly accepts.\n\nReturn only the name as plain text. No salutation, no role, no relationship descriptor.\n\nDo not infer a name from background voices, third-party references, or names the user mentions about other people.\nDo not return the agent's name.\nDo not invent or guess at a name from partial syllables or unclear audio.\n\nIf multiple names are mentioned, return the one most clearly identified as the user being called.\nIf no name is clearly mentioned or confirmed, return an empty string.",
+    "is_subjective": true,
+    "is_objective": false,
+    "subjective_type": "text"
+  },
+  {
+    "name": "customer_phone_number",
+    "category": "User_Data",
+    "question": "You are an assistant scanning the transcript to extract the user's phone number.\n\nUse the full conversation for context, but extract a phone number only when the user shares, confirms, or corrects their own number in response to a verification, callback, or contact-details question.\n\nReturn only the digit sequence as plain text, with no spaces, dashes, or country code separators unless the user provided them.\n\nDo not extract numbers that are clearly not phone numbers, such as OTPs, pincodes, dates, ages, scores, fee amounts, or reference IDs.\nDo not infer the user's number from the agent's read-back unless the user explicitly confirms it.\nDo not extract third-party phone numbers (referred person, family member) into this field.\n\nIf the user provides multiple numbers, return the one they identify as their primary contact number.\nIf no phone number is clearly shared or confirmed, return an empty string.",
+    "is_subjective": true,
+    "is_objective": false,
+    "subjective_type": "text"
+  },
+  {
+    "name": "customer_email",
+    "category": "User_Data",
+    "question": "You are an assistant scanning the transcript to extract the user's email address.\n\nUse the full conversation for context, but extract an email address only when the user shares, confirms, or corrects their own email in response to a verification, communication-preference, or contact-details question.\n\nReturn only the email address as plain text in standard format.\n\nDo not infer an email from a name plus a domain.\nDo not extract third-party email addresses (referred person, family member, employer) into this field.\nDo not extract emails that the agent reads back unless the user explicitly confirms them.\n\nIf the user provides multiple email addresses, return the one they identify as their primary contact email.\nIf no email is clearly shared or confirmed, return an empty string.",
+    "is_subjective": true,
+    "is_objective": false,
+    "subjective_type": "email"
+  },
+  {
+    "name": "preferred_contact_channel",
+    "category": "User_Data",
+    "question": "You are an assistant scanning the transcript to determine the user's preferred channel for future communication and outreach.\n\nUse the full conversation for context, but base the decision only on the user's explicit statements about how they want to be contacted, what channel they prefer for receiving details, or how they want follow-ups to happen.\n\nClassify as Call, WhatsApp, Email, SMS, No_Preference, Do_Not_Contact, or Not_Specified.\n\nUse the user's most recent clear preference if they change their mind during the conversation.\n\nDo not infer a channel from the agent's offer alone — the user must accept or request it.\nDo not treat a one-off request like \"send me a link on WhatsApp right now\" as a long-term preference unless the user clearly indicates ongoing preference.\nDo not classify as Do_Not_Contact unless the user explicitly asks not to be contacted; that signal belongs to this value and not to any other.\n\nIf the user accepts multiple channels equally or says any is fine, return No_Preference.\nIf the user explicitly refuses future contact altogether, return Do_Not_Contact (highest priority).\nIf no preference is stated or the user does not engage with the topic, return Not_Specified.",
+    "is_subjective": false,
+    "is_objective": true,
+    "objective_options": [
+      { "value": "Call", "condition": "Yield this value if the user clearly prefers a phone call, asks to be called for follow-up, says calling is the best way to reach them, or asks the agent or counselor to call them back for further discussion." },
+      { "value": "WhatsApp", "condition": "Yield this value if the user asks for details, brochures, or follow-up messages on WhatsApp, says they prefer WhatsApp, asks the agent to send things on WhatsApp, or says they check WhatsApp more than other channels." },
+      { "value": "Email", "condition": "Yield this value if the user asks for details to be sent on email, says email is their preferred channel, confirms an email for follow-up, or says they check email regularly." },
+      { "value": "SMS", "condition": "Yield this value if the user specifically asks for SMS or text message updates, prefers messages over calls or emails, or says SMS is the easiest for them." },
+      { "value": "No_Preference", "condition": "Yield this value if the user says any channel is fine, has no specific preference, says the agent can use any method, or accepts whichever option is offered." },
+      { "value": "Do_Not_Contact", "condition": "Yield this value if the user explicitly asks not to be contacted, asks to remove their number, says do not call again, asks to stop follow-ups, or refuses any form of future outreach. This value has the highest priority." },
+      { "value": "Not_Specified", "condition": "Yield this value if no preferred contact channel is mentioned or the user does not respond to channel-related questions." }
+    ]
+  },
+  {
+    "name": "contact_validity_status",
+    "category": "User_Data",
+    "question": "You are an assistant scanning the transcript to determine whether the contacted number or contact is valid, wrong, or marked as Do Not Contact.\n\nUse the full conversation for context. Base the decision on the user's own statements about their identity, willingness to be contacted, and ongoing engagement.\n\nClassify as Wrong_Number, Do_Not_Contact, Valid_Contact, or Not_Specified.\n\nApply this priority order when multiple signals appear:\n1. If the user says this is the wrong number, wrong contact, or the intended person is not associated with this number, return Wrong_Number.\n2. Else if the user explicitly asks not to be contacted, to stop calls, to remove their number, or refuses any future outreach, return Do_Not_Contact.\n3. Else if the user meaningfully engages, confirms identity, or proceeds with the conversation, return Valid_Contact.\n4. Else return Not_Specified.\n\nUse the user's most recent clear intent if they change their position.\n\nDo not infer Wrong_Number from a brief silence, the user being busy, or someone else answering temporarily.\nDo not infer Do_Not_Contact from a polite refusal of the offer if the user is otherwise open to future communication.",
+    "is_subjective": false,
+    "is_objective": true,
+    "objective_options": [
+      { "value": "Wrong_Number", "condition": "Yield this value if the user clearly states this is the wrong number, the wrong contact, they are not the intended person, the intended person does not use this number, or the number has been reassigned. This value has the highest priority." },
+      { "value": "Do_Not_Contact", "condition": "Yield this value if the user explicitly asks not to be called or contacted, asks to stop follow-ups, asks to remove their number, says there are too many calls, or otherwise clearly refuses all future outreach without indicating it is a wrong number." },
+      { "value": "Valid_Contact", "condition": "Yield this value if the user confirms identity, engages meaningfully with the conversation, proceeds with the discussion, or does not raise any wrong-number or do-not-contact concern." },
+      { "value": "Not_Specified", "condition": "Yield this value if there is not enough engagement or information to determine whether the contact is valid, wrong, or marked Do Not Contact." }
+    ]
+  },
+  {
+    "name": "academic_score",
+    "category": "User_Data",
+    "question": "You are an assistant scanning the transcript to extract the academic score, percentage, CGPA, GPA, marks, rank, or expected score shared by the user for the relevant academic level, exam, or qualification being discussed.\n\nUse the full conversation for context, but extract only scores the user explicitly states or confirms when read back by the agent.\n\nReturn the score using these rules:\n- If a percentage is given, return only the numeric value without the percent sign (e.g. \"78\" not \"78%\").\n- If a CGPA or GPA is given, return the decimal value only (e.g. \"8.4\").\n- If marks are given, return the marks exactly as stated (e.g. \"412/720\").\n- If a rank or percentile is given, return it in the form stated (e.g. \"Rank 1450\", \"92 percentile\").\n- If multiple academic levels are discussed, return the score most relevant to the program or admission being discussed.\n\nDo not infer or estimate a score from the user's description of performance (\"did well\", \"average\").\nDo not return the score the agent guesses on behalf of the user unless the user confirms it.\nDo not return scores about a third party such as a sibling or peer.\n\nIf no score is explicitly shared or confirmed, return an empty string.",
+    "is_subjective": true,
+    "is_objective": false,
+    "subjective_type": "text"
+  },
+  {
+    "name": "highest_qualification",
+    "category": "User_Data",
+    "question": "You are an assistant scanning the transcript to determine the highest education level the user has completed or is currently pursuing.\n\nUse the full conversation for context, but base the answer only on what the user clearly states or confirms about their own academic status. Ignore qualifications of other family members or third parties.\n\nClassify into one of the listed values.\n\nWhen the user mentions being in a grade or class, select the closest matching level. When the user has completed graduation, treat it as Undergraduate_Completed unless a higher qualification is also mentioned, in which case use the highest one.\n\nUse the user's most recent clear statement if they correct themselves.\n\nDo not infer qualification from age, work experience, or job title alone.\nDo not classify based on intended future qualifications.\n\nIf qualification is not discussed or cannot be clearly determined from the user's statements, return Not_Specified.",
+    "is_subjective": false,
+    "is_objective": true,
+    "objective_options": [
+      { "value": "Class_10_or_Below", "condition": "Yield this value if the user is currently in Class 10 or below, has completed Class 10 but not Class 11, or is pursuing primary or secondary schooling, and no higher education level is mentioned." },
+      { "value": "Class_11", "condition": "Yield this value if the user says they are currently in Class 11, are about to enter Class 11, or have completed Class 11 but not Class 12." },
+      { "value": "Class_12", "condition": "Yield this value if the user is currently in Class 12, has just completed Class 12, is awaiting Class 12 board results, or is applying for higher education immediately after school." },
+      { "value": "Undergraduate_Pursuing", "condition": "Yield this value if the user is currently pursuing a bachelor's or undergraduate degree such as B.Tech, BBA, B.Com, BA, B.Sc, BCA, B.Arch, MBBS first years, or any equivalent first-degree college program." },
+      { "value": "Undergraduate_Completed", "condition": "Yield this value if the user has completed graduation, a bachelor's degree, or any first-degree college program such as B.Tech, BBA, B.Com, BA, B.Sc, BCA, or equivalent, with no higher qualification mentioned." },
+      { "value": "Postgraduate_Pursuing", "condition": "Yield this value if the user is currently pursuing a master's degree, MBA, M.Tech, MA, M.Sc, MCA, PG diploma, or any equivalent second-degree program." },
+      { "value": "Postgraduate_Completed", "condition": "Yield this value if the user has completed a master's degree, MBA, M.Tech, MA, M.Sc, MCA, PG diploma, or any equivalent second-degree program, with no PhD mentioned." },
+      { "value": "PhD_Pursuing", "condition": "Yield this value if the user says they are currently pursuing a PhD, doctorate, doctoral research, or research fellowship leading to a doctorate." },
+      { "value": "PhD_Completed", "condition": "Yield this value if the user says they have completed a PhD or doctorate." },
+      { "value": "Other", "condition": "Yield this value if the user mentions a qualification that exists but does not clearly fit any listed category, such as a vocational diploma, ITI, certificate course, or non-standard credential." },
+      { "value": "Not_Specified", "condition": "Yield this value if qualification is not discussed, the user does not respond to qualification-related questions, or the level cannot be determined clearly." }
+    ]
+  },
+  {
+    "name": "exam_interest",
+    "category": "User_Data",
+    "question": "You are an assistant scanning the transcript to determine whether the user is interested in appearing for the relevant entrance, admission, or qualifying exam being discussed in the call.\n\nUse the full conversation for context, but base the decision only on the user's response when an exam is specifically raised, asked about, or referenced by the agent.\n\nClassify as Yes, No, Maybe, or Not_Specified.\n\nUse the user's most recent clear stance if they change their mind during the conversation.\n\nDo not infer exam interest from generic program interest alone — the user must respond to an exam-related cue.\nDo not classify as Yes from polite acknowledgement of the agent's mention of an exam.\nDo not classify as No simply because the user has not taken the exam yet.\n\nIf the user is unsure, says they will think about it, asks for more details before deciding, or gives a conditional response, return Maybe.\nIf the exam is not discussed or the user gives no clear response, return Not_Specified.",
+    "is_subjective": false,
+    "is_objective": true,
+    "objective_options": [
+      { "value": "Yes", "condition": "Yield this value if the user clearly says they are interested in appearing for the exam, says they are already preparing, agrees to take the exam, asks how to register, asks about exam dates, or gives a clear positive response when asked about the exam." },
+      { "value": "No", "condition": "Yield this value if the user clearly says they are not interested in the exam, refuses to take it, says they do not plan to appear, or rules out the exam as part of their pathway." },
+      { "value": "Maybe", "condition": "Yield this value if the user is unsure, says they will think about it, asks for more information before deciding, gives a conditional response (e.g. depends on time or family decision), or says they have not made up their mind yet." },
+      { "value": "Not_Specified", "condition": "Yield this value if no exam is discussed, the user gives no response when an exam is mentioned, or exam interest cannot be determined clearly from the conversation." }
+    ]
+  },
+  {
+    "name": "exam_taken_type",
+    "category": "User_Data",
+    "question": "You are an assistant scanning the transcript to determine which entrance exam, admission test, aptitude test, or qualifying exam the user has taken, is currently preparing for, or plans to take.\n\nUse the full conversation for context, but select only exams the user explicitly names or clearly confirms when the agent names them.\n\nIf multiple exams are mentioned, select the one most relevant to the current program, admission discussion, or stream of interest. If two are equally relevant, prefer the one the user discusses most recently or in most depth.\n\nDo not infer the exam from the user's stream of interest alone — the exam must be named or clearly confirmed.\nDo not classify the agent's example exam mentions as the user's exam unless the user accepts or confirms it.\nDo not return Other if a listed value matches even partially; pick the closest listed value first.\n\nIf the exam does not fit any listed value, return Other.\nIf no exam is mentioned or discussed, return Not_Specified.",
+    "is_subjective": false,
+    "is_objective": true,
+    "objective_options": [
+      { "value": "JEE", "condition": "Yield this value if the user mentions JEE, JEE Main, JEE Advanced, engineering entrance, or any IIT/NIT/IIIT entrance exam." },
+      { "value": "NEET", "condition": "Yield this value if the user mentions NEET, NEET-UG, NEET-PG, medical entrance, MBBS entrance, or BDS entrance." },
+      { "value": "CUET", "condition": "Yield this value if the user mentions CUET, CUET-UG, CUET-PG, or Common University Entrance Test." },
+      { "value": "CAT", "condition": "Yield this value if the user mentions CAT, Common Admission Test, or applying to IIMs through CAT." },
+      { "value": "MAT", "condition": "Yield this value if the user mentions MAT or Management Aptitude Test." },
+      { "value": "XAT", "condition": "Yield this value if the user mentions XAT or Xavier Aptitude Test." },
+      { "value": "GMAT", "condition": "Yield this value if the user mentions GMAT or Graduate Management Admission Test." },
+      { "value": "GRE", "condition": "Yield this value if the user mentions GRE or Graduate Record Examination." },
+      { "value": "GATE", "condition": "Yield this value if the user mentions GATE or Graduate Aptitude Test in Engineering." },
+      { "value": "CLAT", "condition": "Yield this value if the user mentions CLAT, Common Law Admission Test, or law entrance through CLAT." },
+      { "value": "NID", "condition": "Yield this value if the user mentions NID, NID DAT, or National Institute of Design entrance." },
+      { "value": "NIFT", "condition": "Yield this value if the user mentions NIFT, NIFT entrance, or National Institute of Fashion Technology entrance." },
+      { "value": "UCEED", "condition": "Yield this value if the user mentions UCEED or Undergraduate Common Entrance Examination for Design." },
+      { "value": "CEED", "condition": "Yield this value if the user mentions CEED or Common Entrance Examination for Design." },
+      { "value": "SAT", "condition": "Yield this value if the user mentions SAT, Scholastic Assessment Test, or SAT for US college admissions." },
+      { "value": "IELTS", "condition": "Yield this value if the user mentions IELTS or International English Language Testing System." },
+      { "value": "TOEFL", "condition": "Yield this value if the user mentions TOEFL or Test of English as a Foreign Language." },
+      { "value": "State_Entrance_Exam", "condition": "Yield this value if the user mentions a state-level entrance exam such as CET, MHT-CET, KCET, EAMCET, COMEDK, WBJEE, AP EAPCET, TS EAMCET, KEAM, or any similar state-specific test." },
+      { "value": "Institute_Specific_Exam", "condition": "Yield this value if the user mentions a college, university, or institute-specific admission test such as BITSAT, VITEEE, SRMJEE, AMUEEE, JMI entrance, or any in-house institute test." },
+      { "value": "Other", "condition": "Yield this value if the user clearly names an entrance or qualifying exam that does not fit any listed value." },
+      { "value": "Not_Specified", "condition": "Yield this value if no entrance, admission, aptitude, or qualifying exam is mentioned by the user." }
+    ]
+  },
+  {
+    "name": "program_or_stream_interest",
+    "category": "User_Data",
+    "question": "You are an assistant scanning the transcript to identify the academic program, course, specialization, or stream the user is interested in pursuing.\n\nUse the full conversation for context, but select only a program or stream the user clearly mentions, asks about, or shows clear interest in.\n\nIf multiple programs or streams are discussed, select the one the user shows the strongest or most recent clear interest in. If interest is split equally, prefer the most recent clear preference.\n\nDo not infer program interest from the user's existing qualification or general curiosity alone — there must be clear interest, inquiry, or stated preference.\nDo not classify based on the agent's recommendation unless the user accepts or shows interest.\nDo not return Other if a listed value partially matches; pick the closest listed value first.\n\nIf the user's preferred stream does not fit any listed value, return Other.\nIf no program or stream is mentioned or interest cannot be determined, return Not_Specified.",
+    "is_subjective": false,
+    "is_objective": true,
+    "objective_options": [
+      { "value": "Computer_Science", "condition": "Yield this value if the user shows interest in Computer Science, CSE, software engineering, coding, programming, IT, or related variants." },
+      { "value": "AI_ML", "condition": "Yield this value if the user shows interest in AI, ML, Artificial Intelligence, Machine Learning, Generative AI, Deep Learning, or related specializations." },
+      { "value": "Data_Science", "condition": "Yield this value if the user shows interest in Data Science, data analytics, business analytics, data engineering, or related variants." },
+      { "value": "Cybersecurity", "condition": "Yield this value if the user shows interest in cybersecurity, ethical hacking, information security, blockchain and cybersecurity, or related variants." },
+      { "value": "Electronics_Communication", "condition": "Yield this value if the user shows interest in Electronics and Communication, ECE, electronics engineering, communication engineering, VLSI, embedded systems, or related variants." },
+      { "value": "Mechanical", "condition": "Yield this value if the user shows interest in Mechanical Engineering, mechatronics, automobile engineering, or related variants." },
+      { "value": "Civil", "condition": "Yield this value if the user shows interest in Civil Engineering, structural engineering, construction technology, or related variants." },
+      { "value": "Management", "condition": "Yield this value if the user shows interest in management, business administration, BBA, MBA, marketing, finance, HR, operations, or related variants." },
+      { "value": "Commerce", "condition": "Yield this value if the user shows interest in commerce, accounting, B.Com, CA, CMA, finance commerce, or related variants." },
+      { "value": "Design", "condition": "Yield this value if the user shows interest in design, fashion design, product design, graphic design, UX/UI, visual design, animation, or related variants." },
+      { "value": "Law", "condition": "Yield this value if the user shows interest in law, legal studies, LLB, BA-LLB, BBA-LLB, corporate law, or related variants." },
+      { "value": "Medical", "condition": "Yield this value if the user shows interest in medicine, MBBS, BDS, nursing, pharmacy, BAMS, BHMS, allied health, or related medical fields." },
+      { "value": "Arts_Humanities", "condition": "Yield this value if the user shows interest in arts, humanities, psychology, literature, sociology, history, political science, journalism, or related variants." },
+      { "value": "Other", "condition": "Yield this value if the user mentions a program or stream that does not fit any listed value, such as agriculture, hospitality, aviation, or other specialized fields." },
+      { "value": "Not_Specified", "condition": "Yield this value if no program, course, specialization, or stream is mentioned or interest cannot be determined from the conversation." }
+    ]
+  },
+  {
+    "name": "hostel_requirement",
+    "category": "User_Data",
+    "question": "You are an assistant scanning the transcript to determine whether the user needs or is interested in hostel, residential accommodation, campus housing, or boarding facility.\n\nUse the full conversation for context, but base the decision only on what the user clearly states or confirms about their own accommodation need.\n\nClassify as Yes, No, or Not_Specified.\n\nUse the user's most recent clear stance if they change their mind.\n\nDo not infer Yes from the user's home being far from the campus unless they explicitly request accommodation.\nDo not classify No from the user being from the same city unless they also explicitly say accommodation is not needed.\nDo not classify based on parents' or family's preference unless the user clearly endorses it.\n\nIf hostel or accommodation is not discussed or the response is unclear, return Not_Specified.",
+    "is_subjective": false,
+    "is_objective": true,
+    "objective_options": [
+      { "value": "Yes", "condition": "Yield this value if the user asks about hostel, accommodation, residence, boarding, campus stay, PG, or shared housing options, or clearly says they will need accommodation for the program." },
+      { "value": "No", "condition": "Yield this value if the user clearly says hostel or accommodation is not needed, says they will arrange their own stay, will commute from home, or have local family they can stay with." },
+      { "value": "Not_Specified", "condition": "Yield this value if hostel or accommodation is not discussed, the user does not respond to accommodation-related questions, or the answer cannot be determined clearly." }
+    ]
+  },
+  {
+    "name": "program_delivery_mode",
+    "category": "User_Data",
+    "question": "You are an assistant scanning the transcript to determine the user's preferred mode of program delivery or study.\n\nUse the full conversation for context, but select only a mode the user clearly states, asks about, or confirms as their preference.\n\nClassify as Online, Offline, Hybrid, Study_Abroad, Distance_Learning, Other, or Not_Specified.\n\nUse the user's most recent clear preference if they change their mind during the conversation.\n\nDo not infer a preference from the program being offered in a specific mode by default.\nDo not assume offline preference because the user lives in the same city as the campus.\nDo not return Other if a listed value partially matches; pick the closest listed value first.\n\nIf the mode does not fit any listed value, return Other.\nIf no delivery mode is discussed or preference cannot be determined, return Not_Specified.",
+    "is_subjective": false,
+    "is_objective": true,
+    "objective_options": [
+      { "value": "Online", "condition": "Yield this value if the user prefers online classes, live virtual sessions, remote learning, or says they want to study from home through internet-based delivery." },
+      { "value": "Offline", "condition": "Yield this value if the user prefers in-person, classroom-based, on-campus, or physical-center delivery for the program." },
+      { "value": "Hybrid", "condition": "Yield this value if the user prefers or asks about a mix of online and offline delivery, blended learning, or part-time campus visits with remote study." },
+      { "value": "Study_Abroad", "condition": "Yield this value if the user is specifically interested in studying outside their country, at an international campus, or through a study-abroad pathway." },
+      { "value": "Distance_Learning", "condition": "Yield this value if the user mentions distance education, correspondence courses, self-paced remote learning, or non-live remote study (different from live online classes)." },
+      { "value": "Other", "condition": "Yield this value if the user states a delivery mode that does not fit any listed value, such as weekend-only batches with no clear online or offline classification." },
+      { "value": "Not_Specified", "condition": "Yield this value if no delivery mode is discussed or the user's preference cannot be determined clearly." }
+    ]
+  },
+  {
+    "name": "respondent_type",
+    "category": "User_Data",
+    "question": "You are an assistant scanning the transcript to identify who the agent was primarily speaking with, in relation to the learner or admission decision.\n\nUse the full conversation for context. Select the person who actually engaged in the call, not necessarily the person whose name is in the lead record.\n\nIf multiple people speak during the call, select the primary decision-maker or the person who gave the clearest substantive responses. If a parent and student both speak roughly equally, prefer whoever drives the admission decision.\n\nDo not assume the respondent is the student just because the lead record says so.\nDo not classify based on the agent's assumption — base it on the respondent's own self-identification or the conversational dynamic.\nDo not return Other if a listed value partially matches.\n\nIf the relationship cannot be determined from the conversation, return Not_Specified.",
+    "is_subjective": false,
+    "is_objective": true,
+    "objective_options": [
+      { "value": "Student", "condition": "Yield this value if the speaker is the student, learner, candidate, or applicant themselves, identifying as the person who will pursue the program." },
+      { "value": "Parent_Guardian", "condition": "Yield this value if the speaker is the parent, guardian, mother, father, or primary caretaker of the student, speaking on behalf of or alongside them." },
+      { "value": "Sibling_Relative", "condition": "Yield this value if the speaker is a sibling, cousin, uncle, aunt, or other family member who is not the parent or guardian." },
+      { "value": "Friend", "condition": "Yield this value if the speaker is a friend, classmate, or acquaintance of the student, helping with the call but not a family member." },
+      { "value": "Counselor_or_Agent", "condition": "Yield this value if the speaker is an external counselor, school or college representative, consultant, agent, or intermediary handling the call on behalf of the student." },
+      { "value": "Other", "condition": "Yield this value if the speaker is identifiable but does not fit any listed relationship." },
+      { "value": "Not_Specified", "condition": "Yield this value if the speaker's relationship to the learner cannot be determined from the conversation." }
+    ]
+  }
+]

@@ -1,0 +1,37 @@
+[
+  {
+    "name": "callback",
+    "category": "Scheduling_Next_Steps",
+    "question": "You are an assistant scanning the transcript to determine whether the user requested a callback to continue the same conversation later, and to extract the callback time if one was provided.\n\nA callback means the user is busy now, cannot continue, or wants to resume the current conversation at a different time — not a next-step engagement with a different person.\n\nUse the full conversation for context, but evaluate only the user's responses tied to a callback, busy state, \"call me later\", or scheduling-to-resume question.\n\nFor the Pre-defined output:\nClassify as Yes or No.\nReturn Yes if the user clearly requests or agrees to be called back to continue this same conversation later, says they are busy now, asks the agent to call at another time, or clearly accepts a callback when offered.\nReturn No if the user does not request a callback, continues the current conversation without asking for one, refuses a callback, or gives only vague/non-committal responses.\n\nFor the Free Text output:\nIf Yes, extract the callback timestamp the user specified or agreed to. Resolve relative dates and vague times using the call timestamp. Normalize to ISO 8601 format or as available. If the user agreed to a callback but gave no time, leave empty.\nIf No, leave empty.\n\nNever return a past timestamp.\nDo not treat a next-step engagement (counselor call, demo, admission discussion) as a callback — that belongs in future_scheduling.\nDo not infer callback intent from general interest in the program.\nUse the user's most recent clear position if they change their mind.",
+    "is_subjective": true,
+    "is_objective": true,
+    "subjective_type": "timestamp",
+    "objective_options": [
+      { "value": "Yes", "condition": "Yield this value if the user asks to be called back later, says they are busy now, asks the agent to call at another time, requests a callback to continue the current conversation, accepts the agent's callback offer, or provides a specific time for the same conversation to resume." },
+      { "value": "No", "condition": "Yield this value if the user does not request a callback, continues the conversation without asking for one, declines a callback, says they do not want to be called again, or gives only vague/non-committal responses about callback timing." }
+    ]
+  },
+  {
+    "name": "future_scheduling",
+    "category": "Scheduling_Next_Steps",
+    "question": "You are an assistant scanning the transcript to determine whether a next-step engagement was scheduled with the user, such as a counselor call, learning consultant discussion, demo session, admission counseling, documentation session, or further consultation.\n\nA next-step engagement is different from a callback — it represents progression to a new conversation with new context or a senior team member, not a resumption of the current call.\n\nUse the full conversation for context, but evaluate only the user's responses tied to a next-step, counselor, demo, admission, or further-discussion question.\n\nFor the Pre-defined output:\nClassify as Yes or No.\nReturn Yes if the user clearly agrees to a next-step engagement, asks for one, confirms a time for it, or provides a date or day for further engagement.\nReturn No if the user declines the next-step engagement, remains vague or non-committal, or no clear next-step time is agreed.\n\nFor the Free Text output:\nIf Yes, extract the scheduled timestamp the user agreed to. Resolve relative dates and vague times using the call timestamp. Normalize to ISO 8601 format or as available. If the user agreed but gave no time, leave empty.\nIf No, leave empty.\n\nNever return a past timestamp.\nDo not treat a callback to resume the same conversation as future_scheduling — that belongs in the callback extraction.\nDo not infer scheduling intent from general program interest alone.\nUse the user's most recent clear intent if they change their mind.",
+    "is_subjective": true,
+    "is_objective": true,
+    "subjective_type": "timestamp",
+    "objective_options": [
+      { "value": "Yes", "condition": "Yield this value if the user agrees to talk to a counselor or learning consultant, accepts a demo or admission discussion, asks to schedule a next-step session, provides a date or time for further engagement, or shows clear willingness to move ahead with a new conversation." },
+      { "value": "No", "condition": "Yield this value if the user declines a next-step engagement, refuses to talk to a counselor, says they are not ready for further discussion, remains vague or non-committal, or no clear next-step is agreed by the end of the call." }
+    ]
+  },
+  {
+    "name": "follow_up_interest",
+    "category": "Scheduling_Next_Steps",
+    "question": "You are an assistant scanning the transcript to determine whether the user expressed interest in any follow-up engagement after the current call.\n\nFollow-up interest is broader than a scheduled callback or next-step session — it captures whether the user is open to being engaged again, even without a confirmed time. The user may say \"yes, you can reach out later\" without committing to a specific date.\n\nUse the full conversation for context, but base the decision only on responses tied to a follow-up, future engagement, \"should we reach out\", or continuation question.\n\nClassify as Yes or No.\n\nUse the user's most recent clear intent if they change their mind.\n\nDo not infer follow-up interest from politeness alone.\nDo not classify as Yes if the user explicitly asks not to be contacted.\nDo not classify as No if the user is simply busy now but is open to future engagement.\n\nIf the user expresses any clear openness to future follow-up, return Yes.\nIf the user declines, remains vague, or no clear interest is expressed, return No.",
+    "is_subjective": false,
+    "is_objective": true,
+    "objective_options": [
+      { "value": "Yes", "condition": "Yield this value if the user agrees to future follow-up, says the agent can reach out again, expresses openness to further discussion, asks for more details to be shared later, or otherwise indicates willingness to be engaged again even without a specific schedule." },
+      { "value": "No", "condition": "Yield this value if the user declines follow-up, asks not to be contacted, says they are not interested in further engagement, remains vague or non-committal on follow-up, or no follow-up willingness is expressed." }
+    ]
+  }
+]

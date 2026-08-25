@@ -1,0 +1,140 @@
+[
+  {
+    "name": "admission_interest",
+    "category": "Call_Success",
+    "question": "You are an assistant scanning the transcript to determine whether the user is interested in taking admission, enrolling, applying, or moving forward with the relevant program or course.\n\nUse the full conversation for context, but base the decision on the user's clearest and most recent stated intent regarding admission, enrollment, application, or next steps.\n\nClassify as Yes, No, Maybe, or Not_Specified.\n\nUse the user's most recent clear intent if they change their mind during the conversation.\n\nDo not infer admission interest from generic curiosity about the program — the user must show intent to move forward.\nDo not classify as Yes from politeness alone or from agreeing to receive more information.\nDo not classify as No from a temporary unavailability or a request to revisit later.\n\nIf the user is unsure, asks to think about it, gives a conditional response, or says they will decide later, return Maybe.\nIf admission interest is not discussed or cannot be determined, return Not_Specified.",
+    "is_subjective": false,
+    "is_objective": true,
+    "objective_options": [
+      { "value": "Yes", "condition": "Yield this value if the user clearly says they are interested in admission, wants to apply or enroll, asks for next steps to join, requests application process details, or shows clear intent to move forward with the program." },
+      { "value": "No", "condition": "Yield this value if the user clearly says they are not interested in admission, declines the offer, rejects the program, says they do not want to proceed, or explicitly rules out enrollment." },
+      { "value": "Maybe", "condition": "Yield this value if the user is unsure, undecided, says they will think about it, asks for time to decide, gives a conditional response such as depending on family or exam results, or shows mixed intent without a clear commitment." },
+      { "value": "Not_Specified", "condition": "Yield this value if admission interest is not discussed during the call or the user's intent cannot be determined clearly." }
+    ]
+  },
+  {
+    "name": "qualification_status",
+    "category": "Call_Success",
+    "question": "You are an assistant scanning the transcript to determine whether the lead is qualified for the relevant program, campaign, or admission process.\n\nUse the full conversation for context, including the user's stated interest, eligibility signals, qualification, exam status, location, program fit, and any campaign-specific criteria that may be relevant.\n\nClassify as Qualified, Not_Qualified, or Not_Sure.\n\nApply campaign-specific qualification criteria when provided. In their absence, use the general criteria below.\n\nUse the user's clearest and most recent statements; do not over-weight early conversational politeness.\n\nDo not classify as Qualified from politeness or mere willingness to listen — qualification requires meaningful interest plus apparent fit.\nDo not classify as Not_Qualified from a temporary objection that has not been substantively addressed.\nDo not classify as Not_Sure when there is sufficient information to make a clear determination.\n\nOperational blockers such as Wrong_Number or Do_Not_Contact should map to Not_Qualified, as these leads cannot be progressed.\n\nIf qualification cannot be determined due to incomplete information or undecided user state, return Not_Sure.",
+    "is_subjective": false,
+    "is_objective": true,
+    "objective_options": [
+      { "value": "Qualified", "condition": "Yield this value if the user shows meaningful interest, engages substantively with the conversation, asks relevant questions about admission or program details, shares required qualification information, and appears to meet the campaign's eligibility or fit criteria." },
+      { "value": "Not_Qualified", "condition": "Yield this value if the user clearly rejects the offering, does not meet eligibility or fit criteria, falls outside the target audience, says wrong number, asks not to be contacted, or the conversation is fundamentally irrelevant to the campaign's goals." },
+      { "value": "Not_Sure", "condition": "Yield this value if the user's interest, eligibility, or fit is unclear, the conversation is incomplete, the user is undecided, or there is insufficient information gathered during the call to make a clear qualification decision." }
+    ]
+  },
+  {
+    "name": "admission_timeline",
+    "category": "Call_Success",
+    "question": "You are an assistant scanning the transcript to determine the user's intended timeline for admission, enrollment, application, or starting the program.\n\nUse the full conversation for context, but base the answer only on what the user explicitly states or clearly confirms about when they plan to act.\n\nClassify as Immediate, Short_Term, Medium_Term, Long_Term, Undecided, or Not_Specified.\n\nUse the user's most recent clear timeline if it changes during the conversation.\n\nDo not infer timeline from the program's intake calendar alone — the user must indicate their own intent.\nDo not classify based on the agent's suggested timeline unless the user confirms it.\nDo not over-classify as Immediate from politeness or willingness to discuss; immediacy requires clear urgency signals.\n\nWhen the user gives a vague timeframe that could fit multiple buckets, choose the bucket that best matches the user's tone of urgency.\nIf the user is unsure or undecided, return Undecided.\nIf no timeline is mentioned, return Not_Specified.",
+    "is_subjective": false,
+    "is_objective": true,
+    "objective_options": [
+      { "value": "Immediate", "condition": "Yield this value if the user says they want to proceed right now, immediately, this month, urgently, as soon as possible, or that they want to start the program in the current admission window with clear action intent." },
+      { "value": "Short_Term", "condition": "Yield this value if the user mentions a near-future timeline such as next month, after the current exam, within one to three months, or some other near-term but not immediate intent." },
+      { "value": "Medium_Term", "condition": "Yield this value if the user mentions a defined but more distant timeline such as three to six months away, next semester, next intake, or after a specific milestone like completion of current studies." },
+      { "value": "Long_Term", "condition": "Yield this value if the user mentions next year or later, after completing current school or college, after graduation, or any clearly long-range timeline beyond the current academic cycle." },
+      { "value": "Undecided", "condition": "Yield this value if the user is unsure of timing, says maybe or will think about it, says it depends on something else, or cannot commit to any specific timeline." },
+      { "value": "Not_Specified", "condition": "Yield this value if no admission, enrollment, or application timeline is mentioned during the call." }
+    ]
+  },
+  {
+    "name": "call_outcome",
+    "category": "Call_Success",
+    "question": "You are an assistant scanning the transcript to classify the final business outcome of the call.\n\nUse the full conversation for context, the user's most recent clear intent, and the actual next step agreed.\n\nApply this priority order — pick the first matching outcome:\n1. Wrong_Number if the user says wrong number or wrong contact.\n2. Do_Not_Contact if the user asks not to be contacted.\n3. Not_Connected if the call never meaningfully connected.\n4. Escalated if the call requires senior or human escalation.\n5. Converted if the user completed the intended conversion step on the call (application, payment, booking).\n6. Follow_Up_Scheduled if a next-step engagement was scheduled.\n7. Callback_Requested if the user requested a callback to continue later.\n8. Interested if the user shows clear interest but no specific next step or conversion.\n9. Needs_More_Info if the user mainly asks for details before deciding and no stronger outcome applies.\n10. Not_Interested if the user clearly declines or is not interested.\n11. NA if none of the above can be determined.\n\nReturn only one final outcome value.\n\nDo not classify Interested from politeness — there must be clear interest signals.\nDo not stack outcomes; pick the first that matches the priority order.",
+    "is_subjective": false,
+    "is_objective": true,
+    "objective_options": [
+      { "value": "Interested", "condition": "Yield this value if the user shows clear interest in the program or offering but no specific next step has been scheduled and no conversion has completed during the call." },
+      { "value": "Not_Interested", "condition": "Yield this value if the user clearly declines, says they are not interested, or rules out the offering, and no higher-priority operational outcome applies." },
+      { "value": "Callback_Requested", "condition": "Yield this value if the user requests or agrees to a callback to continue the same conversation later, but no higher-priority outcome such as conversion or follow-up scheduling applies." },
+      { "value": "Follow_Up_Scheduled", "condition": "Yield this value if a next-step engagement such as a counselor call, demo, or admission discussion was clearly scheduled, and no higher-priority outcome such as conversion applies." },
+      { "value": "Converted", "condition": "Yield this value if the user completed the intended conversion step during the call, such as starting the application, completing payment, or making a booking, as relevant to the campaign." },
+      { "value": "Not_Connected", "condition": "Yield this value if the call did not meaningfully connect, the user gave no substantive response, or the call ended before any real discussion could happen." },
+      { "value": "Wrong_Number", "condition": "Yield this value if the user says this is the wrong number, wrong contact, or that the intended person is not associated with this number. This has the highest priority among operational outcomes." },
+      { "value": "Do_Not_Contact", "condition": "Yield this value if the user explicitly asks not to be contacted again, asks to stop calls, asks to remove their number, or refuses all future outreach." },
+      { "value": "Needs_More_Info", "condition": "Yield this value if the user mainly asks for information or details before deciding, has not made a commitment, and no stronger outcome such as Follow_Up_Scheduled applies." },
+      { "value": "Escalated", "condition": "Yield this value if the call requires senior, human, or support team escalation due to a complaint, unresolved issue, or a question the agent could not answer." },
+      { "value": "NA", "condition": "Yield this value if the call outcome cannot be determined from the conversation." }
+    ]
+  },
+  {
+    "name": "program_interest",
+    "category": "Call_Success",
+    "question": "You are an assistant scanning the transcript to determine whether the user is interested in the specific program, course, or service being offered in the call.\n\nUse the full conversation for context, focusing on the user's clearest and most recent stance toward the offering.\n\nClassify as Interested, Not_Interested, Maybe, Needs_More_Info, or Not_Specified.\n\nUse the user's most recent clear stance if they change their mind during the call.\n\nProgram interest is narrower than admission interest — admission interest is about commitment to enroll; program interest is about whether the offering itself appeals to the user.\n\nDo not infer interest from politeness or asking questions for context — the user must show genuine engagement with the program's value.\nDo not classify as Not_Interested from a temporary objection that has not been addressed.\n\nIf the user primarily asks for details before deciding, return Needs_More_Info.\nIf the user is unsure or undecided, return Maybe.\nIf program interest is not discussed or cannot be determined, return Not_Specified.",
+    "is_subjective": false,
+    "is_objective": true,
+    "objective_options": [
+      { "value": "Interested", "condition": "Yield this value if the user shows clear interest in the program or offering, asks engagement-driven questions about it, expresses enthusiasm about its features or outcomes, or shows clear intent to learn more with a positive lean." },
+      { "value": "Not_Interested", "condition": "Yield this value if the user clearly declines the program, says they are not interested, says it does not fit them, or rules out the offering for any clear reason." },
+      { "value": "Maybe", "condition": "Yield this value if the user is unsure, undecided, says maybe, or gives a conditional response that is neither clearly interested nor clearly not interested." },
+      { "value": "Needs_More_Info", "condition": "Yield this value if the user primarily asks for more details, information, brochures, or a demo before deciding, without clearly accepting or rejecting the program." },
+      { "value": "Not_Specified", "condition": "Yield this value if program interest is not discussed during the call or cannot be determined from the user's responses." }
+    ]
+  },
+  {
+    "name": "application_status",
+    "category": "Call_Success",
+    "question": "You are an assistant scanning the transcript to determine the user's current application status for the relevant program, admission, enrollment, or form process.\n\nUse the full conversation for context, but base the answer only on what the user explicitly states or clearly confirms about their own application progress.\n\nClassify Layer 1 as Yet_To_Start, In_Progress, Completed, Facing_Issue, or Not_Specified.\n\nIf Layer 1 is Facing_Issue, also classify Layer 2 — the type of issue — as Missing_Documents, Financial_or_Payment, Technical_or_Portal, Eligibility_or_Verification, Deadline_or_Timeline, or Other_Issue.\n\nUse the user's most recent clear application state.\n\nDo not classify as Completed from the user's intent to complete — the application must already be submitted.\nDo not classify as Facing_Issue from a general concern unrelated to active blockage — the user must currently be stuck.\nDo not return Other_Issue if a listed Layer 2 value matches partially; pick the closest one.\n\nIf application status is not discussed or cannot be determined, return Not_Specified.",
+    "is_subjective": false,
+    "is_objective": true,
+    "objective_options": [
+      { "value": "Yet_To_Start", "condition": "Yield this value if the user says they have not started the application, have not filled the form, plan to begin soon, or have done no application activity yet." },
+      { "value": "In_Progress", "condition": "Yield this value if the user says the application or form has been started but is not yet completed or submitted, including partially filled forms or pending document uploads without active blockage." },
+      { "value": "Completed", "condition": "Yield this value if the user says the application or form has been submitted, completed, or finalized, with no pending action on their side." },
+      {
+        "value": "Facing_Issue",
+        "condition": "Yield this value if the user reports being stuck, blocked, unable to submit, or facing a specific problem with the application process. When this is selected, also classify the issue type in Layer 2.",
+        "sub_options": [
+          { "value": "Missing_Documents", "condition": "Layer 2 under Facing_Issue. Yield this value if the user is blocked due to missing documents, certificates, identification, marksheets, photos, signatures, or any required upload that they do not currently have available." },
+          { "value": "Financial_or_Payment", "condition": "Layer 2 under Facing_Issue. Yield this value if the issue is fees, payment failure, affordability, loan delay, refund pending, transaction not going through, or any money-related blockage." },
+          { "value": "Technical_or_Portal", "condition": "Layer 2 under Facing_Issue. Yield this value if the issue is website or app failure, login or OTP problems, upload errors, system errors, page not loading, or any technical or portal-related blockage." },
+          { "value": "Eligibility_or_Verification", "condition": "Layer 2 under Facing_Issue. Yield this value if the issue is eligibility verification, background check, score mismatch, criteria not met as per the user's record, or pending approval from the institution." },
+          { "value": "Deadline_or_Timeline", "condition": "Layer 2 under Facing_Issue. Yield this value if the issue is a missed deadline, late submission risk, admission window closing, or timing-related blockage." },
+          { "value": "Other_Issue", "condition": "Layer 2 under Facing_Issue. Yield this value if the user reports a clear application blockage that does not fit any other Layer 2 category." }
+        ]
+      },
+      { "value": "Not_Specified", "condition": "Yield this value if application status is not discussed or cannot be determined from the conversation." }
+    ]
+  },
+  {
+    "name": "scholarship_or_financial_assistance",
+    "category": "Call_Success",
+    "question": "You are an assistant scanning the transcript to determine whether the user needs, asks about, or is interested in scholarship, fee waiver, financial aid, education loan, funding support, or any form of financial assistance.\n\nUse the full conversation for context, but base the answer only on what the user explicitly raises or confirms.\n\nClassify Layer 1 as Yes, No, or Not_Specified.\n\nIf Layer 1 is Yes, also classify Layer 2 — the type of assistance — as Merit_Based, Need_Based, Category_Based, Sports_Based, Exam_Score_Based, Government_Scholarship, Education_Loan, or Other_Assistance.\n\nUse the user's most recent clear financial need stance.\n\nDo not infer Yes from general curiosity about fees or generic price concerns — the user must clearly request financial assistance or indicate inability to afford without support.\nDo not classify as No just because the user does not mention scholarship explicitly; absence of discussion is Not_Specified.\nDo not return Other_Assistance if a listed Layer 2 value matches partially; pick the closest one.\n\nIf scholarship or financial assistance is not discussed or cannot be determined, return Not_Specified.",
+    "is_subjective": false,
+    "is_objective": true,
+    "objective_options": [
+      {
+        "value": "Yes",
+        "condition": "Yield this value if the user asks about scholarship, fee waiver, discount, financial aid, education loan, funding options, EMI, or clearly indicates affordability concerns that require financial support. When this is selected, also classify the assistance type in Layer 2.",
+        "sub_options": [
+          { "value": "Merit_Based", "condition": "Layer 2 under Yes. Yield this value if the user asks about merit-based scholarships, scholarships tied to academic grades, CGPA, board exam results, or overall performance." },
+          { "value": "Need_Based", "condition": "Layer 2 under Yes. Yield this value if the user asks about need-based or income-based assistance, affordability support, financial hardship aid, or family-income-linked schemes." },
+          { "value": "Category_Based", "condition": "Layer 2 under Yes. Yield this value if the user asks about category or reservation-based scholarships such as OBC, SC, ST, EWS, minority, or other category-specific schemes." },
+          { "value": "Sports_Based", "condition": "Layer 2 under Yes. Yield this value if the user asks about sports quota or sports-achievement-based scholarships." },
+          { "value": "Exam_Score_Based", "condition": "Layer 2 under Yes. Yield this value if the user asks about scholarships tied to entrance exam scores, ranks, percentiles, or specific test performance." },
+          { "value": "Government_Scholarship", "condition": "Layer 2 under Yes. Yield this value if the user asks about government scholarships, state or central schemes, PMSSS, or any public-funded financial support." },
+          { "value": "Education_Loan", "condition": "Layer 2 under Yes. Yield this value if the user asks about education loans, EMI plans, bank financing, or any loan-based funding option." },
+          { "value": "Other_Assistance", "condition": "Layer 2 under Yes. Yield this value if the user requests financial assistance that does not fit any other Layer 2 category." }
+        ]
+      },
+      { "value": "No", "condition": "Yield this value if the user clearly says financial assistance or scholarship is not needed, rejects the offer of one, or says affordability is not a concern." },
+      { "value": "Not_Specified", "condition": "Yield this value if scholarship or financial assistance is not discussed during the call or cannot be determined from the user's responses." }
+    ]
+  },
+  {
+    "name": "sentiment_temperature",
+    "category": "Call_Success",
+    "question": "You are an assistant scanning the transcript to classify the user's overall sentiment and engagement temperature across the call.\n\nUse the full conversation for context. Focus on the user's tone, cooperation level, asked questions, objections, and conversion readiness toward the end of the call.\n\nClassify as Hot, Warm, Neutral, Cold, or Negative.\n\nUse the user's most recent and dominant sentiment by call end. Early-conversation reluctance that turns into clear interest should map to Warm or Hot; early interest that turns to refusal should map to Cold or Negative.\n\nDo not infer Hot from politeness alone — Hot requires clear conversion-ready signals.\nDo not classify Negative for a mildly disinterested user; Negative is for anger, frustration, or strong dissatisfaction.\nDo not classify Neutral as a default; pick Neutral only when the engagement is genuinely middle-of-the-road.\n\nReturn only one value.",
+    "is_subjective": false,
+    "is_objective": true,
+    "objective_options": [
+      { "value": "Hot", "condition": "Yield this value if the user is highly interested, enthusiastic, asks for immediate next steps, wants to apply or enroll now, requests urgent action, completes a conversion step on the call, or shows strong buying or admission intent." },
+      { "value": "Warm", "condition": "Yield this value if the user is positive, cooperative, engaged, asks relevant program or admission questions, discusses next steps openly, or shows meaningful interest while not being fully ready to convert immediately." },
+      { "value": "Neutral", "condition": "Yield this value if the user is polite but gives limited engagement, asks only basic questions without clear interest, remains unsure or undecided, or shows mixed signals without a dominant lean." },
+      { "value": "Cold", "condition": "Yield this value if the user is disinterested, resistant, hesitant, says they are not looking right now, declines the program, or shows weak engagement without being angry or hostile." },
+      { "value": "Negative", "condition": "Yield this value if the user is angry, frustrated, complains strongly, asks to stop calling, asks to remove their contact, or expresses clear dissatisfaction or hostility." }
+    ]
+  }
+]

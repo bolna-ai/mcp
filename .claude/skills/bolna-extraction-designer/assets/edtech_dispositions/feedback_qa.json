@@ -1,0 +1,57 @@
+[
+  {
+    "name": "customer_feedback_and_rating",
+    "category": "Feedback_QA",
+    "question": "You are an assistant scanning the transcript to capture both the numeric rating the user provides and any qualitative feedback, complaint, concern, or experience they share about the product, program, service, agent, or call.\n\nA rating may be explicit (the user says a number 1-5, or rates the call/service) or implied by the agent asking for a 1-5 rating. The qualitative feedback may be a single sentence or an extended description.\n\nFor the Pre-defined output:\nClassify as 1, 2, 3, 4, 5, or Not_Provided.\nReturn 1 if the user gives the lowest rating or expresses severe dissatisfaction tied to a rating prompt.\nReturn 5 if the user gives the highest rating or expresses strong satisfaction tied to a rating prompt.\nReturn 2, 3, or 4 for intermediate values as stated by the user.\nReturn Not_Provided if no rating was given or asked for.\n\nFor the Free Text output:\nCapture the qualitative feedback, complaint, concern, dissatisfaction, or experience expressed by the user. Summarize using the user's own framing — do not add opinions, infer hidden concerns, or invent feedback.\nIf no qualitative feedback is shared, leave empty.\n\nDo not infer a rating from sentiment alone — only return a numeric value when the user explicitly states one or responds to an explicit rating question.\nDo not include the agent's own assessment in the feedback text.\nUse the user's most recent clear rating if they revise it during the call.",
+    "is_subjective": true,
+    "is_objective": true,
+    "subjective_type": "text",
+    "objective_options": [
+      { "value": "1", "condition": "Yield this value if the user explicitly gives a rating of 1, says \"one out of five\", or otherwise states the lowest score in response to a rating question or feedback prompt." },
+      { "value": "2", "condition": "Yield this value if the user explicitly gives a rating of 2 or states this score in response to a rating question." },
+      { "value": "3", "condition": "Yield this value if the user explicitly gives a rating of 3 or states this score in response to a rating question." },
+      { "value": "4", "condition": "Yield this value if the user explicitly gives a rating of 4 or states this score in response to a rating question." },
+      { "value": "5", "condition": "Yield this value if the user explicitly gives a rating of 5, says \"five out of five\", or otherwise states the highest score in response to a rating question or feedback prompt." },
+      { "value": "Not_Provided", "condition": "Yield this value if no explicit numeric rating is given by the user or no rating question is asked during the call." }
+    ]
+  },
+  {
+    "name": "objection_type",
+    "category": "Feedback_QA",
+    "question": "You are an assistant scanning the transcript to classify the main objection or barrier raised by the user during the call.\n\nUse the full conversation for context, and base the answer only on objections the user actually expresses through their own statements.\n\nClassify as Price, Timing, Not_Interested, Trust, Eligibility, Location, Family_Approval, Already_Enrolled, Needs_More_Info, Other, or NA.\n\nSelect the user's strongest or most recent clear objection. If multiple objections are raised, prefer the one that appears to be the actual blocker rather than a secondary mention.\n\nDo not treat normal questions for information as objections unless they show hesitation, doubt, or refusal.\nDo not classify a request to think about it as an objection — that maps to interest-related extractions instead.\nDo not return Other if a listed value partially matches.\n\nIf no objection or barrier is raised, return NA.",
+    "is_subjective": false,
+    "is_objective": true,
+    "objective_options": [
+      { "value": "Price", "condition": "Yield this value if the user objects to fees, cost, affordability, payment terms, EMI options, loan requirements, value for money, or the financial commitment required." },
+      { "value": "Timing", "condition": "Yield this value if the user raises objections about timing, schedule conflicts, exam preparation overlap, admission window, batch start date, or any time-related blocker." },
+      { "value": "Not_Interested", "condition": "Yield this value if the user's primary objection is general disinterest — they clearly say they are not interested, not looking, or not exploring this option, without a more specific reason." },
+      { "value": "Trust", "condition": "Yield this value if the user raises concerns about credibility, legitimacy, brand recognition, placement outcomes, alumni results, refund policies, or institutional trust." },
+      { "value": "Eligibility", "condition": "Yield this value if the user is concerned about their own marks, qualification, age, background, exam score, or fit for the eligibility criteria of the program." },
+      { "value": "Location", "condition": "Yield this value if the user objects due to campus location, city, distance, relocation requirements, commute, or travel concerns." },
+      { "value": "Family_Approval", "condition": "Yield this value if the user says they need parent, guardian, spouse, or family approval before deciding and this is the primary blocker." },
+      { "value": "Already_Enrolled", "condition": "Yield this value if the user says they have already enrolled in another program, joined elsewhere, or committed to a competitor's offering." },
+      { "value": "Needs_More_Info", "condition": "Yield this value if the user's primary objection is wanting more details, brochures, or a demo before deciding, without a more specific concern." },
+      { "value": "Other", "condition": "Yield this value if an objection is clearly raised but does not fit any listed value, such as personal health concerns or sudden life circumstances." },
+      { "value": "NA", "condition": "Yield this value if no objection or barrier is raised by the user during the call." }
+    ]
+  },
+  {
+    "name": "escalation_required",
+    "category": "Feedback_QA",
+    "question": "You are an assistant scanning the transcript to determine whether the call requires senior, support, counselor, supervisor, or human escalation.\n\nUse the full conversation for context. Look for signals such as dissatisfaction, unresolved complaints, critical issues, negative past experiences, requests for senior staff, or questions the agent could not satisfactorily answer.\n\nClassify as Yes or No.\n\nUse the user's most recent clear concern signal.\n\nDo not classify as Yes from mild objections that the agent handled adequately within the call.\nDo not classify as No if there is a clearly unresolved blocker requiring senior follow-up, even if the call ended politely.\n\nOperational escalation triggers (anger, removal request, unresolved complaint, request to speak to a human, agent unable to answer a substantive question) all map to Yes.",
+    "is_subjective": false,
+    "is_objective": true,
+    "objective_options": [
+      { "value": "Yes", "condition": "Yield this value if the user raised a complaint that was not resolved on the call, showed clear dissatisfaction, reported a serious issue, requested a senior or human representative, asked questions the agent could not answer, or had an unresolved concern requiring follow-up." },
+      { "value": "No", "condition": "Yield this value if no escalation-worthy issue, complaint, dissatisfaction, or unresolved query was raised, or if any concerns raised were adequately addressed within the same call." }
+    ]
+  },
+  {
+    "name": "unanswered_queries",
+    "category": "Feedback_QA",
+    "question": "You are an assistant scanning the transcript to extract the specific user questions, queries, or concerns that remained unresolved by the end of the call.\n\nUse the full conversation for context. Include only queries that were actually asked or clearly raised by the user during the call and were not properly answered before the call ended.\n\nOutput each unresolved query as a short line, paraphrased or quoted from the user, separated by newlines.\n\nDo not include resolved queries.\nDo not include opinions or summaries.\nDo not include agent questions or rhetorical statements from the agent.\nDo not invent queries the user did not actually ask.\nDo not include general curiosity that the user did not explicitly raise as a question.\n\nIf multiple distinct queries are unresolved, list each one separately.\nIf no unresolved query exists, return an empty string.",
+    "is_subjective": true,
+    "is_objective": false,
+    "subjective_type": "text"
+  }
+]
