@@ -62,8 +62,10 @@ import { registerViolationsTools } from "./violations";
 import { registerWorkflowsTools } from "./workflows";
 import { registerWorkflowCampaignsTools } from "./workflow-campaigns";
 import { registerWorkflowExecutionsTools } from "./workflow-executions";
+import { registerExtractionPrompts } from "./prompts";
 
 export function registerAllTools(server: McpServer) {
+  registerExtractionPrompts(server);
   registerReadTools(server);
   registerWriteTools(server);
   registerDocsTools(server);

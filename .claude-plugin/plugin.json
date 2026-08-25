@@ -1,0 +1,19 @@
+{
+  "name": "bolna",
+  "description": "Bolna Voice AI in Claude Code: manage agents, calls, batches, phone numbers, knowledge bases, SIP trunks, and post-call extraction (dispositions). For Bolna Agent Skills (methodology, prompt authoring, etc.), install github.com/bolna-ai/skills separately via `npx skills add bolna-ai/skills`.",
+  "version": "0.1.0",
+  "author": {
+    "name": "Bolna",
+    "url": "https://bolna.ai"
+  },
+  "homepage": "https://github.com/bolna-ai/mcp",
+  "mcpServers": {
+    "bolna": {
+      "type": "http",
+      "url": "https://mcp.bolna.ai/api/mcp",
+      "headers": {
+        "Authorization": "Bearer ${BOLNA_API_KEY}"
+      }
+    }
+  }
+}

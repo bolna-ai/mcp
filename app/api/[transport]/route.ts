@@ -1,5 +1,6 @@
 import { createMcpHandler, withMcpAuth } from "mcp-handler";
 import { registerAllTools } from "../../../src/tools/index";
+import { SERVER_INSTRUCTIONS } from "../../../src/tools/prompts";
 import { verifyToken } from "../../../src/lib/auth";
 
 const handler = createMcpHandler(
@@ -11,6 +12,7 @@ const handler = createMcpHandler(
       name: "Bolna",
       version: "0.1.0",
     },
+    instructions: SERVER_INSTRUCTIONS,
   },
   {
     basePath: "/api",
