@@ -80,6 +80,15 @@ that respect tool annotations.
 | `delete_disposition` | Write, Destructive | Permanently delete a disposition. |
 | `test_dispositions` | Read | Run an agent's dispositions against a sample transcript. |
 
+### Extraction categories
+
+| Tool | Type | Description |
+|---|---|---|
+| `list_extraction_categories` | Read | List an agent's extraction categories with their dispositions. |
+| `create_extraction_category` | Write | Create an extraction category (name + model) on an agent. |
+| `update_extraction_category` | Write, Destructive | Rename a category or change its model; renames rewrite the category text on its dispositions. |
+| `delete_extraction_category` | Write, Destructive | Permanently delete a category and every disposition inside it. |
+
 ### Phone numbers & inbound
 
 | Tool | Type | Description |

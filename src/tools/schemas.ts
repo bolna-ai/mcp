@@ -40,6 +40,7 @@ export const executionIdSchema = z
 
 export const batchIdSchema = z.string().min(1, "batch_id is required");
 export const dispositionIdSchema = z.string().min(1, "disposition_id is required");
+export const categoryIdSchema = z.string().min(1, "category_id is required");
 export const phoneNumberIdSchema = z.string().min(1, "phone_number_id is required");
 export const trunkIdSchema = z.string().min(1, "trunk_id is required");
 export const subAccountIdSchema = z.string().min(1, "sub_account_id is required");

@@ -44,7 +44,18 @@ const subjectiveTypeConfigSchema = z.object({
 const dispositionFieldsSchema = {
   name: z.string().min(1, "name is required"),
   question: z.string().min(1, "question is required"),
-  category: z.string().optional().default("General"),
+  category: z
+    .string()
+    .optional()
+    .describe(
+      "Category name (legacy path): resolved against the agent's attached categories by name, creating a new category when none matches. Prefer category_id for an existing category. Omit both to use the default \"General\" category."
+    ),
+  category_id: z
+    .string()
+    .optional()
+    .describe(
+      "ID of an existing extraction category attached to the agent (preferred over category). Get IDs from list_extraction_categories. Pass either category_id or category, not both."
+    ),
   system_prompt: z.string().optional(),
   model: z.string().optional().default("gpt-4.1-mini"),
   is_subjective: z.boolean().optional().default(false),
@@ -63,11 +74,16 @@ const dispositionFieldsSchema = {
  * (registerTool's inputSchema is a flat shape, not a refinable ZodObject).
  */
 function validateDispositionFields(d: {
+  category?: string;
+  category_id?: string;
   is_subjective: boolean;
   is_objective: boolean;
   subjective_type: string;
   objective_options?: unknown[];
 }): string | null {
+  if (d.category_id !== undefined && d.category !== undefined) {
+    return "Pass either category_id or category, not both.";
+  }
   if (!d.is_subjective && !d.is_objective) {
     return "At least one of is_subjective or is_objective must be true.";
   }
@@ -92,7 +108,7 @@ export function registerDispositionsTools(server: McpServer) {
     {
       title: "List dispositions",
       description:
-        "Lists dispositions (structured extraction questions run against call transcripts). Pass agent_id to scope to one agent's linked dispositions, or omit to see every disposition on the account. The response shape differs depending on whether agent_id is passed.",
+        "Lists dispositions (structured extraction questions run against call transcripts). Pass agent_id to scope to one agent's linked dispositions, or omit to see every disposition on the account. The response shape differs depending on whether agent_id is passed. Disposition entries include category_id alongside the legacy category name.",
       inputSchema: {
         agent_id: agentIdSchema.optional(),
         api_key: apiKeyOverrideSchema(),
@@ -115,7 +131,7 @@ export function registerDispositionsTools(server: McpServer) {
     {
       title: "Get disposition",
       description:
-        "Retrieves a single disposition by ID. Pass agent_id to require it be linked to that agent.",
+        "Retrieves a single disposition by ID. Pass agent_id to require it be linked to that agent. The response includes category_id alongside the category name.",
       inputSchema: {
         disposition_id: dispositionIdSchema,
         agent_id: agentIdSchema.optional(),
@@ -143,7 +159,7 @@ export function registerDispositionsTools(server: McpServer) {
     {
       title: "Create disposition",
       description:
-        "Creates a new disposition (a structured extraction question evaluated against every call transcript) linked to an agent. Requires is_subjective and/or is_objective; objective_options is required when is_objective is true.",
+        "Creates a new disposition (a structured extraction question evaluated against every call transcript) linked to an agent. Requires is_subjective and/or is_objective; objective_options is required when is_objective is true. Place it in a category (the set of dispositions evaluated together in one LLM pass) via category_id (preferred) or category name; with both omitted it lands in the default \"General\" category. Responses include category_id alongside the category name.",
       inputSchema: {
         agent_id: agentIdSchema,
         ...dispositionFieldsSchema,
@@ -174,7 +190,7 @@ export function registerDispositionsTools(server: McpServer) {
     {
       title: "Bulk create dispositions",
       description:
-        "Atomically creates multiple dispositions linked to one agent in a single request. If any disposition is invalid, none are created.",
+        "Atomically creates multiple dispositions linked to one agent in a single request. If any disposition is invalid, none are created. Each disposition can carry category_id (preferred) or category name to pick its category (the set of dispositions evaluated together in one LLM pass).",
       inputSchema: {
         agent_id: agentIdSchema,
         dispositions: z
@@ -208,13 +224,19 @@ export function registerDispositionsTools(server: McpServer) {
     {
       title: "Update disposition",
       description:
-        "Partially updates a disposition. If agent_id is provided and the disposition is shared across agents, this forks a private copy scoped to that agent instead of editing the shared original (Bolna's copy-on-write behavior) — the response indicates whether it updated in place or created a copy.",
+        "Partially updates a disposition. If agent_id is provided and the disposition is shared across agents, this forks a private copy scoped to that agent instead of editing the shared original (Bolna's copy-on-write behavior) — the response indicates whether it updated in place or created a copy. Pass category_id (preferred over category name) to move the disposition into another of the agent's extraction categories; responses include category_id alongside the category name.",
       inputSchema: {
         disposition_id: dispositionIdSchema,
         agent_id: agentIdSchema.optional(),
         name: z.string().optional(),
         question: z.string().optional(),
         category: z.string().optional(),
+        category_id: z
+          .string()
+          .optional()
+          .describe(
+            "Move the disposition into this existing extraction category (preferred over category). Get IDs from list_extraction_categories. Pass either category_id or category, not both."
+          ),
         system_prompt: z.string().optional(),
         model: z.string().optional(),
         is_subjective: z.boolean().optional(),
@@ -227,6 +249,9 @@ export function registerDispositionsTools(server: McpServer) {
       annotations: { title: "Update disposition", readOnlyHint: false, destructiveHint: true },
     },
     async ({ disposition_id, api_key, ...fields }, extra) => {
+      if (fields.category_id !== undefined && fields.category !== undefined) {
+        return errorResult("Pass either category_id or category, not both.");
+      }
       const apiKey = getApiKey(extra as any, api_key);
       try {
         const result = await bolnaFetch(
