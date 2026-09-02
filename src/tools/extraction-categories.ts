@@ -14,10 +14,8 @@ const errorResult = (text: string) => ({
   isError: true as const,
 });
 
-// Extraction categories group an agent's dispositions: extraction is the
-// post-call feature, a category is the set of dispositions evaluated
-// together in one LLM pass (one category = one LLM call, run on the
-// category's model), and a disposition is a single question inside it.
+// A category is the set of dispositions evaluated together in one extraction
+// LLM pass (one category = one LLM call, run on the category's model).
 export function registerExtractionCategoriesTools(server: McpServer) {
   server.registerTool(
     "list_extraction_categories",
