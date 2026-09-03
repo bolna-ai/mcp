@@ -44,6 +44,12 @@ const agentConfigSchema = z
     agent_type: z.string().optional(),
     calling_guardrails: z.record(z.any()).optional(),
     ingest_source_config: z.record(z.any()).optional(),
+    call_summary_enabled: z
+      .boolean()
+      .optional()
+      .describe(
+        "When true, runs one platform summary pass per call, writing the summary to the execution's summary field and a subjective-only \"Call Summary\" entry under extracted_data General. When false (default), no summary is generated."
+      ),
   })
   .passthrough();
 
@@ -68,6 +74,12 @@ const patchAgentConfigSchema = z
     telephony_provider: z
       .enum(["twilio", "plivo", "exotel", "vobiz", "sip-trunk", "default"])
       .optional(),
+    call_summary_enabled: z
+      .boolean()
+      .optional()
+      .describe(
+        "When true, runs one platform summary pass per call, writing the summary to the execution's summary field and a subjective-only \"Call Summary\" entry under extracted_data General. When false (default), no summary is generated."
+      ),
   })
   .passthrough();
 
