@@ -14,13 +14,30 @@ const jsonResult = (data: unknown) => ({
 // config shape and branching logic (cases[].when supports "always" or a
 // cmp/left/right comparison against var/const operands). Faithfully
 // modeling every node type here would be as brittle as it is verbose, so
-// only the top-level shape is fixed; individual nodes pass through as-is —
+// only the node envelope is fixed; each node's config passes through as-is —
 // same rationale as agentConfigSchema's tasks/tools_config in write.ts.
+// `name` is the one node field spelled out: it round-trips untouched, so a
+// caller that never learns it exists authors graphs the dashboard can only
+// label by id.
+const workflowNodeSchema = z
+  .object({
+    id: z.string(),
+    type: z.string(),
+    name: z
+      .string()
+      .optional()
+      .describe(
+        'Human-readable label, "" by default. The dashboard falls back to the node id when blank, so set one on every node.'
+      ),
+    config: z.record(z.any()),
+  })
+  .passthrough();
+
 const workflowDefinitionSchema = z
   .object({
     entry_node_id: z.string(),
     on_no_match: z.string().optional(),
-    nodes: z.array(z.record(z.any())),
+    nodes: z.array(workflowNodeSchema),
   })
   .passthrough();
 
@@ -164,7 +181,7 @@ export function registerWorkflowsTools(server: McpServer) {
     {
       title: "Save workflow draft",
       description:
-        "Overwrites a workflow's draft node graph. expected_revision must match the draft's current revision (from get_workflow_draft or the previous save) or the call fails with a 409 revision conflict — call get_workflow_draft first if unsure. Use list_workflow_node_types to see available node types and their config fields.",
+        "Overwrites a workflow's draft node graph. expected_revision must match the draft's current revision (from get_workflow_draft or the previous save) or the call fails with a 409 revision conflict — call get_workflow_draft first if unsure. Use list_workflow_node_types to see available node types and their config fields. Give every node a `name` — it round-trips untouched, and a graph saved without names is unlabelled in the dashboard.",
       inputSchema: {
         workflow_id: workflowIdSchema,
         expected_revision: z.number().int().min(0),
