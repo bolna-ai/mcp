@@ -24,6 +24,32 @@ const workflowDefinitionSchema = z
   })
   .passthrough();
 
+// Passthrough so an unknown key reaches the engine's 422 instead of being silently stripped.
+const workflowSettingsPatchSchema = z
+  .object({
+    webhook: z
+      .object({
+        url: z
+          .string()
+          .url()
+          .optional()
+          .describe(
+            "Receiver URL. Must be https on port 443 or 8443 and resolve to a public address; redirects are not followed. Required when turning the webhook on."
+          ),
+        headers: z
+          .record(z.string().nullable())
+          .optional()
+          .describe(
+            "Headers sent with every delivery, merged name by name onto the stored ones: a string sets that header, null removes it, an omitted header keeps its current value. Names must be unique ignoring case; Host, Content-Length, Transfer-Encoding, Connection and any x-internal* name are reserved."
+          ),
+      })
+      .passthrough()
+      .nullable()
+      .optional()
+      .describe("The execution webhook. null turns it off, removing the URL and every header."),
+  })
+  .passthrough();
+
 export function registerWorkflowsTools(server: McpServer) {
   server.registerTool(
     "create_workflow",
@@ -77,7 +103,7 @@ export function registerWorkflowsTools(server: McpServer) {
     {
       title: "Get workflow",
       description:
-        "Retrieves a workflow's status plus its full version history (draft metadata and every published version, each with campaign/contact outcome totals). Use list_workflows first to find a workflow ID.",
+        "Retrieves a workflow's status, its settings (the execution webhook URL and headers, with every header value masked as \"**********\"), and its full version history (draft metadata and every published version, each with campaign/contact outcome totals). Use list_workflows first to find a workflow ID.",
       inputSchema: { workflow_id: workflowIdSchema, api_key: apiKeyOverrideSchema() },
       annotations: { title: "Get workflow", readOnlyHint: true, openWorldHint: true },
     },
@@ -110,6 +136,56 @@ export function registerWorkflowsTools(server: McpServer) {
         const result = await bolnaFetch(`/workflows/${encodeURIComponent(workflow_id)}`, apiKey, {
           method: "PATCH",
           body: { name },
+        });
+        return jsonResult(result);
+      } catch (err) {
+        return toErrorResult(err);
+      }
+    }
+  );
+
+  server.registerTool(
+    "update_workflow_settings",
+    {
+      title: "Update workflow settings",
+      description:
+        "Changes a workflow's live settings. A change takes effect at once, including for executions already running, and is not tied to a published version. settings is an RFC 7396 JSON merge patch: omitted keys stay as they are and null removes a key. The only section is webhook, the execution webhook: one POST per contact execution when it finishes, with event \"execution.terminal\", execution_id, workflow_id, workflow_version, campaign_id, reference_id, status (completed | failed | cancelled | aborted), termination_reason (the end node's label, or internal_error | required_variable_missing | cancelled | campaign_aborted | zombie | terminated), outcome, occurred_at, and trail (every node attempt in order). Setting webhook.url turns it on; {\"webhook\": null} turns it off. Header values are write-only: the response and get_workflow show each as \"**********\". Omit a header to keep its value, since sending the mask back is rejected. Call test_workflow_webhook afterwards to check the receiver.",
+      inputSchema: {
+        workflow_id: workflowIdSchema,
+        settings: workflowSettingsPatchSchema,
+        api_key: apiKeyOverrideSchema(),
+      },
+      annotations: { title: "Update workflow settings", readOnlyHint: false, destructiveHint: true },
+    },
+    async ({ workflow_id, settings, api_key }, extra) => {
+      const apiKey = getApiKey(extra as any, api_key);
+      try {
+        const result = await bolnaFetch(`/workflows/${encodeURIComponent(workflow_id)}`, apiKey, {
+          method: "PATCH",
+          body: { settings },
+        });
+        return jsonResult(result);
+      } catch (err) {
+        return toErrorResult(err);
+      }
+    }
+  );
+
+  server.registerTool(
+    "test_workflow_webhook",
+    {
+      title: "Test workflow webhook",
+      description:
+        "Sends one sample execution webhook to the workflow's saved webhook URL right now and reports how the receiver answered. The sample has the real payload shape, with a trail walked along the latest published version's first-case path so it carries this workflow's own node ids and extraction fields; reference_id SAMPLE-0001 and an all-zero campaign_id mark it as a sample. result.delivered is true only for a 2xx; otherwise error_type is http_error (see http_status and response_body) or unreachable (DNS, connect, TLS or timeout). Fails with 409 if no webhook is set (use update_workflow_settings) and 422 if the workflow has never been published.",
+      inputSchema: { workflow_id: workflowIdSchema, api_key: apiKeyOverrideSchema() },
+      annotations: { title: "Test workflow webhook", readOnlyHint: false, destructiveHint: false },
+    },
+    async ({ workflow_id, api_key }, extra) => {
+      const apiKey = getApiKey(extra as any, api_key);
+      try {
+        const result = await bolnaFetch(`/workflows/${encodeURIComponent(workflow_id)}/webhook:test`, apiKey, {
+          method: "POST",
+          body: {},
         });
         return jsonResult(result);
       } catch (err) {
