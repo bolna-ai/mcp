@@ -34,13 +34,13 @@ const workflowSettingsPatchSchema = z
           .url()
           .optional()
           .describe(
-            "Receiver URL. Must be https on port 443 or 8443 and resolve to a public address; redirects are not followed. Required when turning the webhook on."
+            "Receiver URL. Must be https on port 443 or 8443, and its host must not be a private, loopback, link-local or carrier-NAT IP address; redirects are not followed. Pointing it at a different host or port drops the stored headers, so send them again in the same call. Required when turning the webhook on."
           ),
         headers: z
           .record(z.string().nullable())
           .optional()
           .describe(
-            "Headers sent with every delivery, merged name by name onto the stored ones: a string sets that header, null removes it, an omitted header keeps its current value. Names must be unique ignoring case; Host, Content-Length, Transfer-Encoding, Connection and any x-internal* name are reserved."
+            "Headers sent with every delivery, merged name by name onto the stored ones: a string sets that header, null removes it, an omitted header keeps its current value unless url moves to a different host or port. Names must be unique ignoring case; Host, Content-Length, Transfer-Encoding, Connection and any x-internal* name are reserved."
           ),
       })
       .passthrough()
@@ -149,7 +149,7 @@ export function registerWorkflowsTools(server: McpServer) {
     {
       title: "Update workflow settings",
       description:
-        "Changes a workflow's live settings. A change takes effect at once, including for executions already running, and is not tied to a published version. settings is an RFC 7396 JSON merge patch: omitted keys stay as they are and null removes a key. The only section is webhook, the execution webhook: one POST per contact execution when it finishes, with event \"execution.terminal\", execution_id, workflow_id, workflow_version, campaign_id, reference_id, status (completed | failed | cancelled | aborted), termination_reason (the end node's label, or internal_error | required_variable_missing | cancelled | campaign_aborted | zombie | terminated), outcome, occurred_at, and trail (every node attempt in order). Setting webhook.url turns it on; {\"webhook\": null} turns it off. Header values are write-only: the response and get_workflow show each as \"**********\". Omit a header to keep its value, since sending the mask back is rejected. Call test_workflow_webhook afterwards to check the receiver.",
+        "Changes a workflow's live settings. A change takes effect at once, including for executions already running, and is not tied to a published version. settings is an RFC 7396 JSON merge patch: omitted keys stay as they are and null removes a key. The only section is webhook, the execution webhook: one POST per contact execution when it finishes, with event \"execution.terminal\", execution_id, workflow_id, workflow_version, campaign_id, reference_id, status (completed | failed | cancelled | aborted), termination_reason (the end node's label, or internal_error | required_variable_missing | cancelled | campaign_aborted | zombie | terminated), outcome, occurred_at, and trail (every node attempt in order). Setting webhook.url turns it on; {\"webhook\": null} turns it off. Header values are write-only: the response and get_workflow show each as \"**********\". Omit a header to keep its value, since sending the mask back is rejected; a url on a different host or port drops every stored header instead. Call test_workflow_webhook afterwards to check the receiver.",
       inputSchema: {
         workflow_id: workflowIdSchema,
         settings: workflowSettingsPatchSchema,

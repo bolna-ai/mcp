@@ -65,7 +65,7 @@ export function registerWorkflowExecutionsTools(server: McpServer) {
     {
       title: "Resend workflow execution webhook",
       description:
-        "Queues a finished execution's webhook again, to the workflow's current webhook URL and headers. The payload is the one originally sent, occurred_at included, so a receiver keyed on execution_id sees a redelivery. Returns the execution_id and destination webhook_url once queued; delivery itself happens asynchronously. Fails with 409 if the execution hasn't finished or its workflow has no webhook set, and 502 if it couldn't be queued, which is safe to retry. Get execution IDs from run_workflow or list_workflow_campaign_executions.",
+        "Queues a finished execution's webhook again, to the workflow's current webhook URL and headers. The payload is the one originally sent, occurred_at included, so a receiver keyed on execution_id sees a redelivery. Returns the execution_id and destination webhook_url once queued; delivery itself happens asynchronously. Fails with 409 if the execution hasn't finished or its workflow has no webhook set, 422 if the message is too large to queue at all, which a retry won't fix, and 502 if it couldn't be queued, which is safe to retry. Get execution IDs from run_workflow or list_workflow_campaign_executions.",
       inputSchema: { execution_id: workflowExecutionIdSchema, api_key: apiKeyOverrideSchema() },
       annotations: { title: "Resend workflow execution webhook", readOnlyHint: false, destructiveHint: false },
     },
