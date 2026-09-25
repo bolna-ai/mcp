@@ -42,12 +42,28 @@ function extractMessage(body: unknown): string {
     if (typeof record.detail === "string" && record.detail.length > 0) {
       return record.detail;
     }
+    // The workflow engine nests its error: {"detail": {"code", "message", "errors"?}}.
+    if (record.detail && typeof record.detail === "object") {
+      const detail = record.detail as Record<string, unknown>;
+      if (typeof detail.message === "string" && detail.message.length > 0) {
+        return withFieldErrors(detail.message, detail.errors);
+      }
+    }
     if (typeof record.error === "string" && record.error.length > 0) {
       return record.error;
     }
   }
   if (typeof body === "string" && body.length > 0) return body;
   return "no further details were returned by the Bolna API";
+}
+
+function withFieldErrors(message: string, errors: unknown): string {
+  if (!Array.isArray(errors) || errors.length === 0) return message;
+  const parts = errors.map((e) => {
+    const { field, message: fieldMessage } = (e ?? {}) as Record<string, unknown>;
+    return field ? `${field}: ${fieldMessage}` : String(fieldMessage);
+  });
+  return `${message} (${parts.join("; ")})`;
 }
 
 export interface ToolErrorContext {

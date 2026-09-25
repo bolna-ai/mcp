@@ -4,7 +4,7 @@
   "display_name": "Bolna Voice AI",
   "version": "0.1.0",
   "description": "Manage Bolna voice AI agents, calls, batches, phone numbers, SIP trunks, and more from Claude.",
-  "long_description": "Local MCP server wrapping the Bolna Voice AI REST API: 84 tools covering agents, call executions, batches, dispositions, phone numbers, inbound routing, SIP trunks, sub-accounts, TTS voices/providers, workflows, and documentation search. Requires a Bolna API key from your Bolna dashboard.",
+  "long_description": "Local MCP server wrapping the Bolna Voice AI REST API: 91 tools covering agents, call executions, batches, dispositions, extraction categories, phone numbers, inbound routing, SIP trunks, sub-accounts, TTS voices/providers, workflows, and documentation search. Requires a Bolna API key from your Bolna dashboard.",
   "author": {
     "name": "Bolna",
     "url": "https://github.com/bolna-ai"
@@ -104,8 +104,10 @@
     { "name": "get_doc", "description": "Fetch the full markdown content of a Bolna documentation page." },
     { "name": "create_workflow", "description": "Create a new (empty) workflow." },
     { "name": "list_workflows", "description": "List workflows, optionally filtered by name. Paginated." },
-    { "name": "get_workflow", "description": "A workflow's status plus its full draft/published version history." },
+    { "name": "get_workflow", "description": "A workflow's status, settings (webhook header values masked), and full draft/published version history." },
     { "name": "rename_workflow", "description": "Rename a workflow." },
+    { "name": "update_workflow_settings", "description": "Set, change, or remove the execution webhook (URL and headers) as a JSON merge patch. Takes effect immediately." },
+    { "name": "test_workflow_webhook", "description": "POST one sample execution webhook to the saved URL and report the receiver's response." },
     { "name": "delete_workflow", "description": "Permanently delete a workflow and every version." },
     { "name": "get_workflow_draft", "description": "The current editable draft definition and its revision number." },
     { "name": "save_workflow_draft", "description": "Overwrite the draft's node graph. Requires the current revision to avoid clobbering concurrent edits." },
@@ -128,7 +130,8 @@
     { "name": "list_workflow_campaign_executions", "description": "List a campaign's per-contact executions. Paginated." },
     { "name": "get_workflow_campaign_report", "description": "Aggregated execution/termination/per-node funnel counts." },
     { "name": "get_workflow_execution", "description": "Current node, node-by-node history, and recent timeline events." },
-    { "name": "cancel_workflow_execution", "description": "Terminate a running execution." }
+    { "name": "cancel_workflow_execution", "description": "Terminate a running execution." },
+    { "name": "resend_workflow_webhook", "description": "Queue a finished execution's original webhook payload again, to the workflow's current URL and headers." }
   ],
   "tools_generated": false,
   "compatibility": {

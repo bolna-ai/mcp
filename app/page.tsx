@@ -108,6 +108,8 @@ const TOOL_CATEGORIES: { category: string; tools: string[] }[] = [
       "list_workflows",
       "get_workflow",
       "rename_workflow",
+      "update_workflow_settings",
+      "test_workflow_webhook",
       "delete_workflow",
       "get_workflow_draft",
       "save_workflow_draft",
@@ -138,7 +140,7 @@ const TOOL_CATEGORIES: { category: string; tools: string[] }[] = [
   },
   {
     category: "Workflow Executions",
-    tools: ["get_workflow_execution", "cancel_workflow_execution"],
+    tools: ["get_workflow_execution", "cancel_workflow_execution", "resend_workflow_webhook"],
   },
   {
     category: "Account",

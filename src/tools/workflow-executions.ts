@@ -59,4 +59,28 @@ export function registerWorkflowExecutionsTools(server: McpServer) {
       }
     }
   );
+
+  server.registerTool(
+    "resend_workflow_webhook",
+    {
+      title: "Resend workflow execution webhook",
+      description:
+        "Queues a finished execution's webhook again, to the workflow's current webhook URL and headers. The payload is the one originally sent, occurred_at included, so a receiver keyed on execution_id sees a redelivery. Returns the execution_id and destination webhook_url once queued; delivery itself happens asynchronously. Fails with 409 if the execution hasn't finished or its workflow has no webhook set, 422 if the message is too large to queue at all, which a retry won't fix, and 502 if it couldn't be queued, which is safe to retry. Get execution IDs from run_workflow or list_workflow_campaign_executions.",
+      inputSchema: { execution_id: workflowExecutionIdSchema, api_key: apiKeyOverrideSchema() },
+      annotations: { title: "Resend workflow execution webhook", readOnlyHint: false, destructiveHint: false },
+    },
+    async ({ execution_id, api_key }, extra) => {
+      const apiKey = getApiKey(extra as any, api_key);
+      try {
+        const result = await bolnaFetch(
+          `/workflow-executions/${encodeURIComponent(execution_id)}/webhook:resend`,
+          apiKey,
+          { method: "POST", body: {} }
+        );
+        return jsonResult(result);
+      } catch (err) {
+        return toErrorResult(err);
+      }
+    }
+  );
 }

@@ -1,7 +1,7 @@
 # Bolna MCP Server
 
 Remote MCP server (Streamable HTTP) wrapping the [Bolna](https://bolna.ai) voice
-AI REST API (`https://api.bolna.ai`): 84 tools covering nearly every documented
+AI REST API (`https://api.bolna.ai`): 91 tools covering nearly every documented
 Bolna endpoint, TypeScript, deployed on Vercel via `mcp-handler`.
 
 **Live at [mcp.bolna.ai](https://mcp.bolna.ai)** — that page has the same
@@ -31,7 +31,7 @@ as `api_key`.
 
 ## Available tools
 
-84 tools across 17 categories. "Write" tools flagged **Destructive** modify,
+91 tools across 15 categories. "Write" tools flagged **Destructive** modify,
 remove, or spend money and typically prompt for confirmation in MCP clients
 that respect tool annotations.
 
@@ -159,8 +159,10 @@ published as an immutable version before it can run.
 |---|---|---|
 | `create_workflow` | Write | Create a new (empty) workflow. |
 | `list_workflows` | Read | List workflows, optionally filtered by name. Paginated. |
-| `get_workflow` | Read | A workflow's status plus its full draft/published version history. |
+| `get_workflow` | Read | A workflow's status, settings (webhook header values masked), and full draft/published version history. |
 | `rename_workflow` | Write, Destructive | Rename a workflow. |
+| `update_workflow_settings` | Write, Destructive | Set, change, or remove the execution webhook (URL and headers) as a JSON merge patch. Takes effect immediately. |
+| `test_workflow_webhook` | Write | POST one sample execution webhook to the saved URL and report the receiver's response. |
 | `delete_workflow` | Write, Destructive | Permanently delete a workflow and every version. |
 | `get_workflow_draft` | Read | The current editable draft definition and its revision number. |
 | `save_workflow_draft` | Write, Destructive | Overwrite the draft's node graph. Requires the current revision to avoid clobbering concurrent edits. |
@@ -198,6 +200,7 @@ A single contact's run through a workflow, created by `run_workflow` or a campai
 |---|---|---|
 | `get_workflow_execution` | Read | Current node, node-by-node history, and recent timeline events. |
 | `cancel_workflow_execution` | Write, Destructive | Terminate a running execution. |
+| `resend_workflow_webhook` | Write | Queue a finished execution's original webhook payload again, to the workflow's current URL and headers. |
 
 ### Account & documentation
 
@@ -347,7 +350,7 @@ interpolation in headers yet, so the key goes in directly:
 
 Instead of the `mcp-remote` bridge above, you can install this as a proper
 [Desktop Extension](https://github.com/modelcontextprotocol/mcpb) (`.mcpb`) —
-a local, stdio-based build of the same 84 tools, packaged with a manifest so
+a local, stdio-based build of the same 91 tools, packaged with a manifest so
 Claude Desktop can install it with one click and prompt you for your API key
 itself (no config file editing).
 
