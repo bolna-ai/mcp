@@ -14,6 +14,54 @@ Endpoint corrections found while verifying tool paths against the live Bolna
 docs are documented in the comment block at the top of
 [`src/tools/index.ts`](src/tools/index.ts).
 
+## Two endpoints
+
+| Endpoint | Tools | For |
+|---|---|---|
+| `/api/mcp` | all 91 | Anyone connecting the server themselves |
+| `/api/connector/mcp` | 10 | The Claude connector directory listing |
+
+**The directory surface is a fixed subset.** A directory listing is reviewed
+as a whole, so every tool on it is surface area to justify.
+`/api/connector/mcp` serves the ten tools named in
+[`src/tools/directory-surface.ts`](src/tools/directory-surface.ts) and
+nothing else, while `/api/mcp` keeps growing. Adding a name to that list
+means adding it to what Anthropic reviews, so do it deliberately. Both
+routes are built by the same factory in
+[`src/lib/mcp-route.ts`](src/lib/mcp-route.ts) and share the same tool
+implementations.
+
+The restriction is applied at registration time, not per call: tools off the
+list never enter the server's registry, so they are absent from `tools/list`
+**and** un-callable by name. Prompts are dropped the same way, so the
+connector answers `prompts/list` with "method not found" rather than
+advertising the four on `/api/mcp`.
+
+Two things also differ on the connector, and only there:
+
+- **No `api_key` parameter.** Every tool on `/api/mcp` accepts an optional
+  `api_key` to target another account for one call (see above). It is
+  stripped from both the schema and the incoming arguments on the connector,
+  so it always acts as the OAuth-authenticated user. The strip lives in the
+  same wrapper as the allowlist — no tool implementation is touched.
+- **Its own server `instructions`.** `SERVER_INSTRUCTIONS` describes tools
+  and prompts the connector doesn't register, so it sends
+  `CONNECTOR_INSTRUCTIONS` from
+  [`src/tools/prompts.ts`](src/tools/prompts.ts) instead.
+
+**OAuth is per-surface.** RFC 9728 metadata must declare a `resource` equal
+to the URL the client connected to, and Claude rejects a mismatch, so a
+single hardcoded document can't serve two paths. `/api/connector/mcp` points
+at the path-insertion form
+`/.well-known/oauth-protected-resource/api/connector/mcp`, served by a
+catch-all route that answers only for known transport paths. `/api/mcp`
+keeps the bare `/.well-known/oauth-protected-resource` it has always handed
+out, so already-connected clients are unaffected. Both documents name the
+same Supabase authorization server, and [`verifyToken`](src/lib/auth.ts)
+does no audience check of its own — the token is forwarded to
+`api.bolna.ai` either way — so the sign-in flow at the two URLs is
+identical.
+
 ## Sub-accounts and switching between accounts
 
 Sub-account API keys (format `sa-...`) work exactly like a main account's key
