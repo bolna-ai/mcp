@@ -4,7 +4,7 @@ import { DIRECTORY_TOOLS, restrictToDirectorySurface } from "../../../../src/too
 
 /**
  * The surface listed in Claude's connector directory, at
- * /api/connector/mcp. Ten read and agent-management tools. Kept separate
+ * /api/connector/mcp. Nine read and agent-management tools. Kept separate
  * from /api/mcp so the reviewed surface stays small and fixed while the
  * full server keeps growing.
  *
