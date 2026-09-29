@@ -18,6 +18,21 @@ For the full worked methodology — archetypes, anti-patterns, condition-writing
 
 Three more invokable prompts cover the rest of Bolna Agent Skills' methodology: \`design_voice_prompt\` (the rigid section structure, Hindi-first/English-second scripted lines, and variable notation a GPT-4.1 mini voice-agent prompt needs — also fixes an existing prompt from a pasted transcript), \`design_graph_agent\` (node/edge schema, deterministic-first routing, expression operators, and event injection for a multi-step graph agent), and \`diagnose_call\` (symptom-to-fix map for latency, interruption, hangup, webhook, and SIP issues, backed by \`latency_data\`/raw logs).`;
 
+/**
+ * Instructions for the ten-tool directory surface at /api/connector/mcp.
+ *
+ * SERVER_INSTRUCTIONS above can't be reused there: it spends most of its
+ * length on the disposition and extraction-category tools and names four
+ * invokable prompts, none of which that surface registers. Pointing a
+ * client at tools it cannot see is worse than saying nothing, so this
+ * covers only what is actually there.
+ */
+export const CONNECTOR_INSTRUCTIONS = `This connector manages Bolna Voice AI agents: create, inspect and update agents, read their call executions, and list batches and phone numbers on the account.
+
+It cannot place, schedule or stop calls. Every tool acts on the Bolna account the user signed in as, and \`delete_agent\` is permanent and irreversible — confirm with the user before calling it.
+
+\`list_agent_executions\` covers a maximum 7-day window and defaults to the last 7 days when no range is given. For the full Bolna tool surface — batches, knowledge bases, dispositions, SIP trunks, sub-accounts, workflows and the prompt-design methodology — connect https://mcp.bolna.ai/api/mcp directly.`;
+
 // The richer, invokable counterpart to SERVER_INSTRUCTIONS above. Clients
 // that surface MCP `prompts` as user-invokable actions (confirmed: Claude
 // Code, as a `/mcp__<server>__design_extraction` slash command) let a user
