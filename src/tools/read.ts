@@ -10,6 +10,7 @@ import {
   pageNumberSchema,
   pageSizeSchema,
   paginate,
+  asList,
 } from "./schemas";
 
 interface AgentV2Summary {
@@ -240,19 +241,13 @@ export function registerReadTools(server: McpServer) {
     async ({ api_key }, extra) => {
       const apiKey = getApiKey(extra as any, api_key);
       try {
-        const numbers = await bolnaFetch<
-          Array<{
-            id: string;
-            phone_number: string;
-            agent_id: string;
-            telephony_provider: string;
-            rented: boolean;
-            price: string;
-            created_at: string;
-            renewal_at: string;
-          }>
-        >("/phone-numbers/all", apiKey);
-        const trimmed: PhoneNumber[] = numbers.map((n) => ({
+        // Typed `unknown` deliberately: bolnaFetch's generic is an
+        // unchecked cast, so asList does the runtime check instead.
+        const numbers = await bolnaFetch<unknown>("/phone-numbers/all", apiKey);
+        const trimmed: PhoneNumber[] = asList<PhoneNumber>(
+          numbers,
+          "GET /phone-numbers/all"
+        ).map((n) => ({
           id: n.id,
           phone_number: n.phone_number,
           agent_id: n.agent_id,
