@@ -9,6 +9,7 @@ import {
   pageNumberSchema,
   pageSizeSchema,
   paginate,
+  asList,
 } from "./schemas";
 
 interface RawLogEntry {
@@ -75,9 +76,15 @@ export function registerExecutionsTools(server: McpServer) {
     async ({ batch_id, page_number, page_size, api_key }, extra) => {
       const apiKey = getApiKey(extra as any, api_key);
       try {
-        const executions = await bolnaFetch<
-          Array<{ id: string; status: string; conversation_duration: number | null; created_at: string }>
-        >(`/batches/${encodeURIComponent(batch_id)}/executions`, apiKey);
+        const executions = asList<{
+          id: string;
+          status: string;
+          conversation_duration: number | null;
+          created_at: string;
+        }>(
+          await bolnaFetch<unknown>(`/batches/${encodeURIComponent(batch_id)}/executions`, apiKey),
+          `GET /batches/${batch_id}/executions`
+        );
         const page = paginate(executions, page_number, page_size);
         const summaries: BatchExecutionSummary[] = page.map((e) => ({
           id: e.id,

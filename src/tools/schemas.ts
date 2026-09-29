@@ -80,3 +80,39 @@ export function paginate<T>(items: T[], pageNumber: number, pageSize: number): T
   const start = (pageNumber - 1) * pageSize;
   return items.slice(start, start + pageSize);
 }
+
+/**
+ * Coerces a list endpoint's response into an array before anything calls
+ * `.map`/`.slice` on it.
+ *
+ * `bolnaFetch` returns whatever the body parsed to, and its generic is a
+ * cast that TypeScript erases at runtime — so a 200 carrying an object, a
+ * non-JSON string (a gateway HTML page, say) or an empty body flows
+ * straight through to array methods and throws "(intermediate value).map
+ * is not a function", naming nothing useful. That was the failure on
+ * list_phone_numbers.
+ *
+ * Nullish or an empty body means an empty list. An array passes through.
+ * An envelope is unwrapped when exactly one plausible array field is
+ * present, since some Bolna list endpoints paginate that way. Anything
+ * else raises an error that says what actually came back, so the next
+ * report names the shape instead of the TypeError.
+ */
+export function asList<T>(value: unknown, endpoint: string): T[] {
+  if (value === undefined || value === null || value === "") return [];
+  if (Array.isArray(value)) return value as T[];
+  if (typeof value === "object") {
+    for (const key of ["data", "items", "results"]) {
+      const inner = (value as Record<string, unknown>)[key];
+      if (Array.isArray(inner)) return inner as T[];
+    }
+  }
+  const described =
+    typeof value === "object" && value !== null
+      ? `object with keys [${Object.keys(value as object).join(", ")}]`
+      : `${typeof value} (${String(value).slice(0, 80)})`;
+  throw new Error(
+    `${endpoint} returned ${described} instead of a list. This is an upstream ` +
+      `response-shape change; the tool expected a JSON array.`
+  );
+}
