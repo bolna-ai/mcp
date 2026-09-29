@@ -82,9 +82,12 @@ export function registerReadTools(server: McpServer) {
     async ({ page_number, page_size, api_key }, extra) => {
       const apiKey = getApiKey(extra as any, api_key);
       try {
-        const agents = await bolnaFetch<
-          Array<{ id: string; agent_name: string; agent_status: string; created_at: string }>
-        >("/v2/agent/all", apiKey);
+        const agents = asList<{
+          id: string;
+          agent_name: string;
+          agent_status: string;
+          created_at: string;
+        }>(await bolnaFetch<unknown>("/v2/agent/all", apiKey), "GET /v2/agent/all");
         const page = paginate(agents, page_number, page_size);
         const summaries: AgentV2Summary[] = page.map((a) => ({
           id: a.id,
@@ -160,7 +163,7 @@ export function registerReadTools(server: McpServer) {
         const toParam = to ?? now.toISOString();
         const fromParam = from ?? sevenDaysAgo.toISOString();
 
-        const page = await bolnaFetch<AgentExecutionsPage>(
+        const page = await bolnaFetch<unknown>(
           `/v2/agent/${encodeURIComponent(agent_id)}/executions`,
           apiKey,
           {
@@ -173,7 +176,20 @@ export function registerReadTools(server: McpServer) {
           }
         );
 
-        const summaries = page.data.map((e) => ({
+        // asList unwraps the documented `{data, total, has_more, ...}`
+        // envelope and equally accepts the bare array the docs page implied
+        // (see the comment block in tools/index.ts). The envelope's own
+        // paging metadata is echoed when present, derived when it isn't.
+        const rows = asList<AgentExecution>(
+          page,
+          `GET /v2/agent/${agent_id}/executions`
+        );
+        const envelope: Partial<AgentExecutionsPage> =
+          page && typeof page === "object" && !Array.isArray(page)
+            ? (page as AgentExecutionsPage)
+            : {};
+
+        const summaries = rows.map((e) => ({
           id: e.id,
           status: e.status,
           conversation_duration: e.conversation_duration,
@@ -191,10 +207,10 @@ export function registerReadTools(server: McpServer) {
           agent_id,
           from: fromParam,
           to: toParam,
-          page_number: page.page_number,
-          page_size: page.page_size,
-          total: page.total,
-          has_more: page.has_more,
+          page_number: envelope.page_number ?? page_number,
+          page_size: envelope.page_size ?? page_size,
+          total: envelope.total ?? rows.length,
+          has_more: envelope.has_more ?? false,
           executions: summaries,
         });
       } catch (err) {
@@ -281,14 +297,15 @@ export function registerReadTools(server: McpServer) {
     async ({ agent_id, page_number, page_size, api_key }, extra) => {
       const apiKey = getApiKey(extra as any, api_key);
       try {
-        const batches = await bolnaFetch<
-          Array<{
-            batch_id: string;
-            status: string;
-            scheduled_at: string | null;
-            created_at: string;
-          }>
-        >(`/batches/${encodeURIComponent(agent_id)}/all`, apiKey);
+        const batches = asList<{
+          batch_id: string;
+          status: string;
+          scheduled_at: string | null;
+          created_at: string;
+        }>(
+          await bolnaFetch<unknown>(`/batches/${encodeURIComponent(agent_id)}/all`, apiKey),
+          `GET /batches/${agent_id}/all`
+        );
         const page = paginate(batches, page_number, page_size);
         const summaries: Batch[] = page.map((b) => ({
           batch_id: b.batch_id,
