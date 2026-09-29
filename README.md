@@ -19,11 +19,11 @@ docs are documented in the comment block at the top of
 | Endpoint | Tools | For |
 |---|---|---|
 | `/api/mcp` | all 91 | Anyone connecting the server themselves |
-| `/api/connector/mcp` | 10 | The Claude connector directory listing |
+| `/api/connector/mcp` | 9 | The Claude connector directory listing |
 
 **The directory surface is a fixed subset.** A directory listing is reviewed
 as a whole, so every tool on it is surface area to justify.
-`/api/connector/mcp` serves the ten tools named in
+`/api/connector/mcp` serves the nine tools named in
 [`src/tools/directory-surface.ts`](src/tools/directory-surface.ts) and
 nothing else, while `/api/mcp` keeps growing. Adding a name to that list
 means adding it to what Anthropic reviews, so do it deliberately. Both

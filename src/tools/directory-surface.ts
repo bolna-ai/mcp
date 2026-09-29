@@ -23,7 +23,6 @@ export const DIRECTORY_TOOLS: ReadonlySet<string> = new Set([
   "list_agent_executions",
   "list_agents",
   "list_batches",
-  "list_phone_numbers",
   "update_agent",
 ]);
 
@@ -37,8 +36,8 @@ const API_KEY_ARG = "api_key";
 /**
  * Drops `api_key` from a tool's declared inputSchema, leaving the rest as-is.
  *
- * For the two tools whose only parameter was `api_key` (get_user_info,
- * list_phone_numbers) this leaves an empty shape, and the SDK renders that
+ * For the one tool whose only parameter was `api_key` (get_user_info)
+ * this leaves an empty shape, and the SDK renders that
  * as its canonical no-parameter schema `{type: "object", properties: {}}`
  * — without the `additionalProperties: false` the other eight carry. That
  * is the SDK's own representation of "takes no arguments", not a gap:
