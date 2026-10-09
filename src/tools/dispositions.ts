@@ -56,7 +56,6 @@ const dispositionFieldsSchema = {
     .describe(
       "ID of an existing extraction category attached to the agent (preferred over category). Get IDs from list_extraction_categories. Pass either category_id or category, not both."
     ),
-  system_prompt: z.string().optional(),
   model: z.string().optional().default("gpt-4.1-mini"),
   is_subjective: z.boolean().optional().default(false),
   is_objective: z.boolean().optional().default(false),
@@ -237,7 +236,6 @@ export function registerDispositionsTools(server: McpServer) {
           .describe(
             "Move the disposition into this existing extraction category (preferred over category). Get IDs from list_extraction_categories. Pass either category_id or category, not both."
           ),
-        system_prompt: z.string().optional(),
         model: z.string().optional(),
         is_subjective: z.boolean().optional(),
         is_objective: z.boolean().optional(),
