@@ -23,6 +23,7 @@ interface AgentV2Summary {
 interface AgentExecution {
   id: string;
   status: string;
+  termination_reason?: string | null;
   conversation_duration: number | null;
   created_at: string;
   telephony_data?: {
@@ -138,7 +139,7 @@ export function registerReadTools(server: McpServer) {
     {
       title: "List agent call history",
       description:
-        "Lists past call executions for a specific Bolna agent, including call status, duration, and timestamps. Use this to review an agent's call history or find an execution ID for transcript lookup. Paginated. Defaults to the last 7 days if from/to are not given (the Bolna API requires a date range no wider than 7 days).",
+        "Lists past call executions for a specific Bolna agent, including call status, termination_reason (what happened to the call attempt, e.g. user_hung_up, no_answer, busy, voicemail_reached), duration, and timestamps. status is the lifecycle state; termination_reason is the outcome. Use this to review an agent's call history or find an execution ID for transcript lookup. Paginated. Defaults to the last 7 days if from/to are not given (the Bolna API requires a date range no wider than 7 days).",
       inputSchema: {
         agent_id: agentIdSchema,
         from: z
@@ -192,6 +193,7 @@ export function registerReadTools(server: McpServer) {
         const summaries = rows.map((e) => ({
           id: e.id,
           status: e.status,
+          termination_reason: e.termination_reason ?? null,
           conversation_duration: e.conversation_duration,
           created_at: e.created_at,
           telephony_data: e.telephony_data
@@ -224,7 +226,7 @@ export function registerReadTools(server: McpServer) {
     {
       title: "Get call details",
       description:
-        "Retrieves full details of a single call execution by ID, including the conversation transcript, call status, duration, telephony data, and cost. Use list_agent_executions to find execution IDs.",
+        "Retrieves full details of a single call execution by ID, including the conversation transcript, call status (lifecycle state), termination_reason (what happened to the call, also on transfer_call_data), duration, telephony data, and cost. Use list_agent_executions to find execution IDs.",
       inputSchema: {
         execution_id: executionIdSchema,
         api_key: apiKeyOverrideSchema(),
