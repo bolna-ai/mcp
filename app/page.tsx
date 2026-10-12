@@ -48,6 +48,15 @@ const TOOL_CATEGORIES: { category: string; tools: string[] }[] = [
     ],
   },
   {
+    category: "Extraction Categories",
+    tools: [
+      "list_extraction_categories",
+      "create_extraction_category",
+      "update_extraction_category",
+      "delete_extraction_category",
+    ],
+  },
+  {
     category: "Phone Numbers",
     tools: [
       "list_phone_numbers",
@@ -141,6 +150,16 @@ const TOOL_CATEGORIES: { category: string; tools: string[] }[] = [
   {
     category: "Workflow Executions",
     tools: ["get_workflow_execution", "cancel_workflow_execution", "resend_workflow_webhook"],
+  },
+  {
+    category: "Graph Agents",
+    tools: [
+      "create_graph_agent",
+      "get_graph_agent",
+      "update_graph_agent",
+      "validate_graph_agent",
+      "send_graph_agent_event",
+    ],
   },
   {
     category: "Account",
