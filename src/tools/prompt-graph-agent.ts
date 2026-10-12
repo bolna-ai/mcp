@@ -2,7 +2,7 @@ import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 
 // Condensed from the bolna-graph-agents Agent Skill (github.com/bolna-ai/skills).
-const METHODOLOGY = `You are designing a Bolna graph agent: a directed graph of nodes and edges for a multi-step voice conversation, set under \`agent_config.tasks[].tools_config.llm_agent\` with \`agent_type: "graph_agent"\`.
+const METHODOLOGY = `You are designing a Bolna graph agent: a directed graph of nodes and edges for a multi-step voice conversation, set under \`agent_config.tasks[].tools_config.llm_agent\` with \`agent_type: "graph_agent"\`, the graph itself in that \`llm_agent\`'s \`llm_config\`.
 
 ## When a graph agent fits
 
@@ -17,9 +17,9 @@ Distinct stages with different objectives (greet → qualify → collect → con
 - **Event injection** — \`POST /v1/call/{run_id}/events\` with \`{"event": "<name>", "properties": {...}}\` pushes a named event into a live call; a matching \`event\` edge on the *current* node transitions and triggers proactive speech. \`properties\` merge into \`context_data\` and become \`{key}\` substitutions downstream. \`run_id\` comes from \`POST /call\`'s response or the inbound webhook.
 - **Per-node RAG** — a node's \`rag_config\` retrieves from a vector store only while the conversation is on that node.
 
-## Top-level \`llm_agent\` fields
+## \`llm_agent.llm_config\` fields
 
-\`agent_type\` ("graph_agent") · \`agent_information\` (global system prompt prepended to every node — keep tight, it's sent on every LLM call) · \`routing_instructions\` (prompt for the routing LLM; supports \`{variable}\` from \`context_data\`, missing keys render \`NULL\`) · \`current_node_id\` (starting node) · \`nodes[]\` · \`model\` (response LLM, default gpt-4.1-mini) · \`routing_model\` (default gpt-4.1-mini) · \`routing_max_tokens\` (default 250, or 150 for GPT-5) · \`routing_reasoning_effort\` (GPT-5 only: minimal/low/medium/high).
+\`agent_information\` (global system prompt prepended to every node — keep tight, it's sent on every LLM call) · \`routing_instructions\` (prompt for the routing LLM; supports \`{variable}\` from \`context_data\`, missing keys render \`NULL\`) · \`current_node_id\` (starting node) · \`nodes[]\` · \`model\` (response LLM, default gpt-4.1-mini) · \`routing_model\` (default gpt-4.1-mini) · \`routing_max_tokens\` (default 250, or 150 for GPT-5) · \`routing_reasoning_effort\` (GPT-5 only: minimal/low/medium/high).
 
 ## Expression edges
 
@@ -82,7 +82,7 @@ Routing decision (deterministic): -> after_hours | deterministic:expression:Outs
 
 Every node has an exit edge or is explicitly terminal · every external API call has a spoken fallback on failure · static nodes don't contain dynamic facts unless safely templated · compliance lines can't be skipped by routing · time-based expressions are backed by a \`timezone\`-set guarantee · event edges have a non-event fallback · outcomes map to a disposition or \`context_data\` field for analytics.
 
-Produce the finished design as the full \`llm_agent\` JSON (or the specific nodes/edges asked for), matching this schema and style exactly — don't invent fields not covered above.`;
+Produce the finished design as the full \`llm_config\` JSON (or the specific nodes/edges asked for), matching this schema and style exactly — don't invent fields not covered above. To save it, pass the \`llm_config\` as \`graph\` to the create_graph_agent tool (or update_graph_agent for an existing agent); both validate it first.`;
 
 export function registerGraphAgentPrompt(server: McpServer) {
   server.registerPrompt(

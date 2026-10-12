@@ -63,6 +63,7 @@ import { registerViolationsTools } from "./violations";
 import { registerWorkflowsTools } from "./workflows";
 import { registerWorkflowCampaignsTools } from "./workflow-campaigns";
 import { registerWorkflowExecutionsTools } from "./workflow-executions";
+import { registerGraphAgentsTools } from "./graph-agents";
 import { registerExtractionPrompts } from "./prompts";
 import { registerVoicePromptPrompt } from "./prompt-voice";
 import { registerGraphAgentPrompt } from "./prompt-graph-agent";
@@ -93,4 +94,5 @@ export function registerAllTools(server: McpServer) {
   registerWorkflowsTools(server);
   registerWorkflowCampaignsTools(server);
   registerWorkflowExecutionsTools(server);
+  registerGraphAgentsTools(server);
 }

@@ -1,7 +1,7 @@
 # Bolna MCP Server
 
 Remote MCP server (Streamable HTTP) wrapping the [Bolna](https://bolna.ai) voice
-AI REST API (`https://api.bolna.ai`): 91 tools covering nearly every documented
+AI REST API (`https://api.bolna.ai`): 96 tools covering nearly every documented
 Bolna endpoint, TypeScript, deployed on Vercel via `mcp-handler`.
 
 **Live at [mcp.bolna.ai](https://mcp.bolna.ai)** — that page has the same
@@ -79,7 +79,7 @@ as `api_key`.
 
 ## Available tools
 
-91 tools across 15 categories. "Write" tools flagged **Destructive** modify,
+96 tools across 16 categories. "Write" tools flagged **Destructive** modify,
 remove, or spend money and typically prompt for confirmation in MCP clients
 that respect tool annotations.
 
@@ -250,6 +250,19 @@ A single contact's run through a workflow, created by `run_workflow` or a campai
 | `cancel_workflow_execution` | Write, Destructive | Terminate a running execution. |
 | `resend_workflow_webhook` | Write | Queue a finished execution's original webhook payload again, to the workflow's current URL and headers. |
 
+### Graph agents
+
+Node-based voice flows (`llm_agent.agent_type: "graph_agent"`). Create, edit, and
+validate the graph, and push events into live calls.
+
+| Tool | Type | Description |
+|---|---|---|
+| `create_graph_agent` | Write | Create a graph agent from nodes and edges. The graph is validated first; voice, transcriber, and telephony have defaults. |
+| `get_graph_agent` | Read | A graph agent's nodes, edges, routing settings, and a validation report. |
+| `update_graph_agent` | Write, Destructive | Replace the graph, or add/replace/remove nodes and change routing settings, keeping the rest of the agent. Validated before saving. |
+| `validate_graph_agent` | Read | Check a graph (or a saved agent) against the graph editor's rules without saving. |
+| `send_graph_agent_event` | Write | Push a named event into a live call; a matching event edge on the current node transitions and the agent speaks. |
+
 ### Account & documentation
 
 | Tool | Type | Description |
@@ -398,7 +411,7 @@ interpolation in headers yet, so the key goes in directly:
 
 Instead of the `mcp-remote` bridge above, you can install this as a proper
 [Desktop Extension](https://github.com/modelcontextprotocol/mcpb) (`.mcpb`) —
-a local, stdio-based build of the same 91 tools, packaged with a manifest so
+a local, stdio-based build of the same 96 tools, packaged with a manifest so
 Claude Desktop can install it with one click and prompt you for your API key
 itself (no config file editing).
 
