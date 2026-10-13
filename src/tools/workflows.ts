@@ -240,7 +240,7 @@ export function registerWorkflowsTools(server: McpServer) {
     {
       title: "Save workflow draft",
       description:
-        "Overwrites a workflow's draft node graph. expected_revision must match the draft's current revision (from get_workflow_draft or the previous save) or the call fails with a 409 revision conflict — call get_workflow_draft first if unsure. Use list_workflow_node_types to see available node types and their config fields.",
+        "Overwrites a workflow's draft node graph. expected_revision must match the draft's current revision (from get_workflow_draft or the previous save) or the call fails with a 409 revision conflict — call get_workflow_draft first if unsure. Use list_workflow_node_types to see available node types and their config fields. A callback node pauses the execution until your system POSTs to its URL; it must route callback.status == \"timeout\" with a case or its own on_no_match, and `status` is reserved as a payload_map name.",
       inputSchema: {
         workflow_id: workflowIdSchema,
         expected_revision: z.number().int().min(0),
@@ -376,6 +376,41 @@ export function registerWorkflowsTools(server: McpServer) {
       try {
         const result = await bolnaFetch("/workflow-node-types", apiKey);
         return jsonResult(result);
+      } catch (err) {
+        return toErrorResult(err);
+      }
+    }
+  );
+
+  server.registerTool(
+    "get_workflow_callback",
+    {
+      title: "Get workflow callback",
+      description:
+        "Returns the callback URL and signing secret for a workflow's callback node, which your system POSTs to in order to resume executions waiting at that node; optionally the last payload received there (kept 30 minutes). Rotation stays a dashboard action.",
+      inputSchema: {
+        workflow_id: workflowIdSchema,
+        node_id: z
+          .string()
+          .min(1, "node_id is required")
+          .describe("The callback node's id in the workflow definition (from get_workflow_draft)"),
+        include_last: z
+          .boolean()
+          .optional()
+          .default(false)
+          .describe("Also return the last payload this node's URL received, kept for 30 minutes"),
+        api_key: apiKeyOverrideSchema(),
+      },
+      annotations: { title: "Get workflow callback", readOnlyHint: true, openWorldHint: true },
+    },
+    async ({ workflow_id, node_id, include_last, api_key }, extra) => {
+      const apiKey = getApiKey(extra as any, api_key);
+      const path = `/workflows/${encodeURIComponent(workflow_id)}/nodes/${encodeURIComponent(node_id)}/callback`;
+      try {
+        const endpoint = await bolnaFetch(path, apiKey);
+        if (!include_last) return jsonResult({ endpoint });
+        const last = await bolnaFetch(`${path}:last`, apiKey);
+        return jsonResult({ endpoint, last });
       } catch (err) {
         return toErrorResult(err);
       }

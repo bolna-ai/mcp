@@ -1,7 +1,7 @@
 # Bolna MCP Server
 
 Remote MCP server (Streamable HTTP) wrapping the [Bolna](https://bolna.ai) voice
-AI REST API (`https://api.bolna.ai`): 96 tools covering nearly every documented
+AI REST API (`https://api.bolna.ai`): 97 tools covering nearly every documented
 Bolna endpoint, TypeScript, deployed on Vercel via `mcp-handler`.
 
 **Live at [mcp.bolna.ai](https://mcp.bolna.ai)** — that page has the same
@@ -18,7 +18,7 @@ docs are documented in the comment block at the top of
 
 | Endpoint | Tools | For |
 |---|---|---|
-| `/api/mcp` | all 91 | Anyone connecting the server themselves |
+| `/api/mcp` | all 97 | Anyone connecting the server themselves |
 | `/api/connector/mcp` | 9 | The Claude connector directory listing |
 
 **The directory surface is a fixed subset.** A directory listing is reviewed
@@ -79,7 +79,7 @@ as `api_key`.
 
 ## Available tools
 
-96 tools across 16 categories. "Write" tools flagged **Destructive** modify,
+97 tools across 16 categories. "Write" tools flagged **Destructive** modify,
 remove, or spend money and typically prompt for confirmation in MCP clients
 that respect tool annotations.
 
@@ -220,6 +220,7 @@ immutable version before it can run.
 | `get_workflow_version` | Read | Retrieve a specific published version's node graph. |
 | `run_workflow` | Write, Destructive | Run a single contact through the latest published version. Places real calls/messages. |
 | `list_workflow_node_types` | Read | Every node type the engine supports, with its config parameters. |
+| `get_workflow_callback` | Read | A callback node's URL and signing secret, optionally with the last payload it received. |
 
 ### Workflow campaigns
 
@@ -412,7 +413,7 @@ interpolation in headers yet, so the key goes in directly:
 
 Instead of the `mcp-remote` bridge above, you can install this as a proper
 [Desktop Extension](https://github.com/modelcontextprotocol/mcpb) (`.mcpb`) —
-a local, stdio-based build of the same 96 tools, packaged with a manifest so
+a local, stdio-based build of the same 97 tools, packaged with a manifest so
 Claude Desktop can install it with one click and prompt you for your API key
 itself (no config file editing).
 

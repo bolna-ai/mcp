@@ -127,6 +127,7 @@ const TOOL_CATEGORIES: { category: string; tools: string[] }[] = [
       "get_workflow_version",
       "run_workflow",
       "list_workflow_node_types",
+      "get_workflow_callback",
     ],
   },
   {
