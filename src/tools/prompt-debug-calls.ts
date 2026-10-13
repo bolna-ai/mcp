@@ -6,7 +6,7 @@ const METHODOLOGY = `You are diagnosing a Bolna voice-agent issue. Most problems
 
 ## Triage first
 
-Get (or infer from what's given): \`execution_id\` (the single most useful thing — every diagnostic flows from it), \`agent_id\`, \`batch_id\` if relevant, the observed symptom in one sentence. Then pull \`get_execution\` (status, costs, transcript, \`latency_data\`, \`telephony_data\`, \`extracted_data\`) and \`get_execution_raw_logs\` (every prompt/request/response, including \`reasoning_content\` when the model exposes it). The raw logs are the most powerful diagnostic Bolna provides — use them before assuming a platform bug: find a wrong response via \`component: "llm"\` + \`type: "response"\` near the timestamp; find a tool that never fired by grepping for its name in \`llm\` entries; find a tool called with wrong params via \`component: "tool"\` + \`type: "request"\`.
+Get (or infer from what's given): \`execution_id\` (the single most useful thing — every diagnostic flows from it), \`agent_id\`, \`batch_id\` if relevant, the observed symptom in one sentence. Then pull \`get_execution\` (status, \`termination_reason\`, costs, transcript, \`latency_data\`, \`telephony_data\`, \`extracted_data\`) and \`get_execution_raw_logs\` (every prompt/request/response, including \`reasoning_content\` when the model exposes it). The raw logs are the most powerful diagnostic Bolna provides — use them before assuming a platform bug: find a wrong response via \`component: "llm"\` + \`type: "response"\` near the timestamp; find a tool that never fired by grepping for its name in \`llm\` entries; find a tool called with wrong params via \`component: "tool"\` + \`type: "request"\`.
 
 ## Symptom → fix
 
@@ -21,6 +21,8 @@ Get (or infer from what's given): \`execution_id\` (the single most useful thing
 **Call ends too soon after the agent speaks** — check \`task_config.hangup_after_LLMCall: true\` (ends right after the first response — one-shot announcements only), \`task_config.call_terminate\` (hard duration cap, default 300s), or an over-eager LLM-prompted hangup trigger in the system prompt.
 
 **Agent sounds robotic / over-narrating** — cap response length in the prompt ("never more than two sentences per turn"), pick a higher-quality voice (ElevenLabs turbo_v2_5/multilingual_v2, Sarvam for Indian languages), enable \`task_config.backchanneling: true\` only where it fits, lower \`temperature\` to 0.2-0.3, and for Indian languages write the prompt in native Devanagari script, not phonetic English.
+
+**Reading a call's outcome** — \`termination_reason\` is the field that says what happened to the call attempt (e.g. \`user_hung_up\`, \`agent_ended_call\`, \`no_answer\`, \`busy\`, \`voicemail_reached\`, \`invalid_number\`, \`insufficient_balance\`, \`provider_error\`, \`platform_error\`; null while in progress); \`status\` is only the lifecycle state. Check \`termination_reason\` first, then \`error_message\`. Transfers carry their own in \`transfer_call_data.termination_reason\`.
 
 **Call stuck in \`queued\`** — check agent concurrency limit (\`get_user_info\`), \`calling_guardrails.call_start_hour\`/\`call_end_hour\`, a future \`scheduled_at\`, wallet balance, and \`retry_intervals_minutes\` on a failed-then-retrying call.
 
