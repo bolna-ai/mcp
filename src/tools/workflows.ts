@@ -9,10 +9,10 @@ const jsonResult = (data: unknown) => ({
   content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }],
 });
 
-// A node graph (nodes/cases/entry_node_id) with 8+ node types (start, agent,
-// extraction, api, time, retry, aisensy_whatsapp, end), each with its own
-// config shape and branching logic (cases[].when supports "always" or a
-// cmp/left/right comparison against var/const operands). Faithfully
+// A node graph (nodes/cases/entry_node_id) with 9+ node types (start, agent,
+// extraction, api, callback, time, retry, aisensy_whatsapp, end), each with
+// its own config shape and branching logic (cases[].when supports "always"
+// or a cmp/left/right comparison against var/const operands). Faithfully
 // modeling every node type here would be as brittle as it is verbose, so
 // only the top-level shape is fixed; individual nodes pass through as-is —
 // same rationale as agentConfigSchema's tasks/tools_config in write.ts.
@@ -367,7 +367,7 @@ export function registerWorkflowsTools(server: McpServer) {
     {
       title: "List workflow node types",
       description:
-        "Lists every node type the workflow engine supports (start, agent, extraction, api, time, retry, aisensy_whatsapp, end), with each one's config parameters, bounds, and defaults. Use this before authoring a workflow definition for save_workflow_draft.",
+        "Lists every node type the workflow engine supports (start, agent, extraction, api, callback, time, retry, aisensy_whatsapp, end), with each one's config parameters, bounds, and defaults. Use this before authoring a workflow definition for save_workflow_draft.",
       inputSchema: { api_key: apiKeyOverrideSchema() },
       annotations: { title: "List workflow node types", readOnlyHint: true, openWorldHint: true },
     },
