@@ -4,7 +4,7 @@
   "display_name": "Bolna Voice AI",
   "version": "0.1.0",
   "description": "Manage Bolna voice AI agents, calls, batches, phone numbers, SIP trunks, and more from Claude.",
-  "long_description": "Local MCP server wrapping the Bolna Voice AI REST API: 115 tools covering agents, call executions, batches, dispositions, extraction categories, phone numbers, inbound routing, SIP trunks, sub-accounts, TTS voices/providers, workflows, graph agents, and documentation search. Requires a Bolna API key from your Bolna dashboard.",
+  "long_description": "Local MCP server wrapping the Bolna Voice AI REST API: 116 tools covering agents, call executions, batches, dispositions, extraction categories, phone numbers, inbound routing, SIP trunks, sub-accounts, TTS voices/providers, workflows, graph agents, and documentation search. Requires a Bolna API key from your Bolna dashboard.",
   "author": {
     "name": "Bolna",
     "url": "https://github.com/bolna-ai"
@@ -135,6 +135,7 @@
     { "name": "get_workflow_version", "description": "Retrieve a specific published version's node graph." },
     { "name": "run_workflow", "description": "Run a single contact through the latest published version. Places real calls/messages." },
     { "name": "list_workflow_node_types", "description": "Every node type the engine supports, with its config parameters." },
+    { "name": "get_workflow_callback", "description": "A callback node's URL and signing secret, optionally with the last payload it received." },
     { "name": "create_workflow_campaign", "description": "Create a campaign pinned to a workflow version." },
     { "name": "list_workflow_campaigns", "description": "List campaigns, optionally filtered by workflow, status, or kind. Paginated." },
     { "name": "get_workflow_campaign", "description": "A campaign's status and totals, plus entry/validation-error breakdowns." },
