@@ -199,9 +199,10 @@ that respect tool annotations.
 ### Workflows
 
 Multi-step, per-contact automations (call an agent, branch on the outcome,
-wait, call an API, message over WhatsApp, retry, and so on) — distinct from
-a single agent's own conversation. A workflow is edited as a draft, then
-published as an immutable version before it can run.
+wait, call an API, wait for a callback from your own system, message over
+WhatsApp, retry, and so on) — distinct from a single agent's own
+conversation. A workflow is edited as a draft, then published as an
+immutable version before it can run.
 
 | Tool | Type | Description |
 |---|---|---|
