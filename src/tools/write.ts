@@ -66,7 +66,7 @@ const patchAgentConfigSchema = z
       .optional(),
     ingest_source_config: z.record(z.any()).optional(),
     telephony_provider: z
-      .enum(["twilio", "plivo", "exotel", "vobiz", "sip-trunk", "default"])
+      .enum(["twilio", "plivo", "exotel", "vobiz", "sip-trunk", "trunk", "default"])
       .optional(),
   })
   .passthrough();

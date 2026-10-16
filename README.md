@@ -1,7 +1,7 @@
 # Bolna MCP Server
 
 Remote MCP server (Streamable HTTP) wrapping the [Bolna](https://bolna.ai) voice
-AI REST API (`https://api.bolna.ai`): 96 tools covering nearly every documented
+AI REST API (`https://api.bolna.ai`): 115 tools covering nearly every documented
 Bolna endpoint, TypeScript, deployed on Vercel via `mcp-handler`.
 
 **Live at [mcp.bolna.ai](https://mcp.bolna.ai)** — that page has the same
@@ -18,7 +18,7 @@ docs are documented in the comment block at the top of
 
 | Endpoint | Tools | For |
 |---|---|---|
-| `/api/mcp` | all 91 | Anyone connecting the server themselves |
+| `/api/mcp` | all 115 | Anyone connecting the server themselves |
 | `/api/connector/mcp` | 9 | The Claude connector directory listing |
 
 **The directory surface is a fixed subset.** A directory listing is reviewed
@@ -79,7 +79,7 @@ as `api_key`.
 
 ## Available tools
 
-96 tools across 16 categories. "Write" tools flagged **Destructive** modify,
+115 tools across 17 categories. "Write" tools flagged **Destructive** modify,
 remove, or spend money and typically prompt for confirmation in MCP clients
 that respect tool annotations.
 
@@ -148,18 +148,45 @@ that respect tool annotations.
 | `setup_inbound_agent` | Write | Route inbound calls on a number to an agent, optionally with an IVR menu. |
 | `unlink_inbound_agent` | Write, Destructive | Remove inbound routing from a number. |
 
-### SIP trunks (bring your own telephony)
+### SIP trunks (bring your own carrier)
 
 | Tool | Type | Description |
 |---|---|---|
-| `create_sip_trunk` | Write | Create a SIP trunk with gateway and auth config. |
-| `get_sip_trunk` | Read | Full details of a SIP trunk. |
-| `list_sip_trunks` | Read | All SIP trunks on the account. |
-| `update_sip_trunk` | Write, Destructive | Partially update a SIP trunk. |
-| `delete_sip_trunk` | Write, Destructive | Permanently delete a trunk and its gateways/numbers. |
-| `add_trunk_number` | Write | Add a DID phone number to a trunk. |
-| `remove_trunk_number` | Write, Destructive | Remove a number from a trunk. |
-| `list_trunk_numbers` | Read | Numbers assigned to a trunk. |
+| `list_trunks` | Read | SIP trunks on the account, with health, gateways, carrier IPs and numbers. |
+| `get_trunk` | Read | Full details of one SIP trunk. |
+| `create_trunk` | Write | Create a SIP trunk for your own carrier. |
+| `update_trunk` | Write, Destructive | Partially update a trunk's settings or carrier credentials. |
+| `delete_trunk` | Write, Destructive | Permanently delete a trunk with its gateways, carrier IPs and numbers. |
+| `add_trunk_gateway` | Write | Add an outbound gateway (the carrier's SIP host). |
+| `remove_trunk_gateway` | Write, Destructive | Remove an outbound gateway. |
+| `add_trunk_carrier_ip` | Write | Allow a carrier signalling IP or CIDR to send inbound calls. |
+| `remove_trunk_carrier_ip` | Write, Destructive | Stop accepting inbound calls from a carrier IP. |
+| `add_number_to_trunk` | Write | Add an E.164 number the carrier routes to the trunk. |
+| `remove_number_from_trunk` | Write, Destructive | Remove a number from a trunk. |
+| `assign_trunk_number_agent` | Write, Destructive | Set or clear the agent that answers a number's inbound calls. |
+| `list_trunk_calls` | Read | Recent calls on a trunk's numbers, with SIP codes. |
+| `get_trunk_connection_details` | Read | Bolna's SIP domain, IPs, port, transports and RTP range to configure at the carrier. |
+| `start_trunk_test_call` | Write, Destructive | Ring a phone through the trunk with an echo test. |
+| `get_trunk_test_call` | Read | State of an outbound test call. |
+| `arm_trunk_inbound_test` | Write | Answer the trunk's next inbound call with an echo test instead of an agent. |
+| `get_trunk_inbound_test` | Read | Whether the trunk is armed and how the inbound test went. |
+| `disarm_trunk_inbound_test` | Write, Destructive | Cancel an inbound test. |
+
+### Legacy SIP trunks (deprecated)
+
+Kept for trunks that already exist on the legacy plane; new setups use the
+SIP trunk tools above.
+
+| Tool | Type | Description |
+|---|---|---|
+| `create_sip_trunk` | Write | Create a legacy SIP trunk with gateway and auth config. Use `create_trunk` instead. |
+| `get_sip_trunk` | Read | Full details of a legacy SIP trunk. Use `get_trunk` instead. |
+| `list_sip_trunks` | Read | All legacy SIP trunks on the account. Use `list_trunks` instead. |
+| `update_sip_trunk` | Write, Destructive | Partially update a legacy SIP trunk. Use `update_trunk` instead. |
+| `delete_sip_trunk` | Write, Destructive | Permanently delete a legacy trunk and its gateways/numbers. Use `delete_trunk` instead. |
+| `add_trunk_number` | Write | Add a DID phone number to a legacy trunk. Use `add_number_to_trunk` instead. |
+| `remove_trunk_number` | Write, Destructive | Remove a number from a legacy trunk. Use `remove_number_from_trunk` instead. |
+| `list_trunk_numbers` | Read | Numbers assigned to a legacy trunk. Use `get_trunk` instead. |
 
 ### Sub-accounts (enterprise)
 
@@ -411,7 +438,7 @@ interpolation in headers yet, so the key goes in directly:
 
 Instead of the `mcp-remote` bridge above, you can install this as a proper
 [Desktop Extension](https://github.com/modelcontextprotocol/mcpb) (`.mcpb`) —
-a local, stdio-based build of the same 96 tools, packaged with a manifest so
+a local, stdio-based build of the same 115 tools, packaged with a manifest so
 Claude Desktop can install it with one click and prompt you for your API key
 itself (no config file editing).
 

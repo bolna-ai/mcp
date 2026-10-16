@@ -55,6 +55,7 @@ import { registerPhoneNumbersTools } from "./phone-numbers";
 import { registerDispositionsTools } from "./dispositions";
 import { registerExtractionCategoriesTools } from "./extraction-categories";
 import { registerSipTrunksTools } from "./sip-trunks";
+import { registerTrunksTools } from "./trunks";
 import { registerBatchesTools } from "./batches";
 import { registerInboundTools } from "./inbound";
 import { registerSubAccountsTools } from "./sub-accounts";
@@ -86,6 +87,7 @@ export function registerAllTools(server: McpServer) {
   registerDispositionsTools(server);
   registerExtractionCategoriesTools(server);
   registerSipTrunksTools(server);
+  registerTrunksTools(server);
   registerBatchesTools(server);
   registerInboundTools(server);
   registerSubAccountsTools(server);
