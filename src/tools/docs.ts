@@ -39,34 +39,108 @@ function toPageUrl(url: string): string {
   return url.replace(/\.mdx?$/, "");
 }
 
+// Mintlify only inlines part of the site in llms.txt; whole tabs are
+// collapsed into `- [Voice Agents (156 pages)](.../_llms/voice-agents.txt)`
+// sub-indexes (seen live 2026-10-12). Those must be followed, or every page
+// behind them — workflows, AiSensy, graph agents — is invisible to search.
+const SUB_INDEX_RE = /\/_llms\/[^/]+\.txt$/;
+const MAX_SUB_INDEXES = 20;
+
+async function fetchIndexText(url: string): Promise<string> {
+  const res = await fetch(url);
+  if (!res.ok) {
+    throw new Error(`Failed to fetch Bolna docs index (HTTP ${res.status})`);
+  }
+  return res.text();
+}
+
 async function getDocsIndex(): Promise<DocEntry[]> {
   if (cachedIndex && Date.now() - cachedIndex.fetchedAt < INDEX_TTL_MS) {
     return cachedIndex.entries;
   }
 
-  const res = await fetch(LLMS_TXT_URL);
-  if (!res.ok) {
-    throw new Error(`Failed to fetch Bolna docs index (HTTP ${res.status})`);
-  }
-  const text = await res.text();
-
   const entries: DocEntry[] = [];
+  const seenPages = new Set<string>();
+  const seenIndexes = new Set<string>([LLMS_TXT_URL]);
   const lineRe = /^-\s*\[([^\]]+)\]\(([^)]+)\):\s*(.*)$/;
-  for (const line of text.split("\n")) {
-    const match = lineRe.exec(line.trim());
-    if (!match) continue;
-    const [, title, url, description] = match;
-    if (!title || !url) continue;
-    entries.push({ title, url: toPageUrl(url), description: description ?? "" });
+
+  const parse = (text: string): string[] => {
+    const subIndexes: string[] = [];
+    for (const line of text.split("\n")) {
+      const match = lineRe.exec(line.trim());
+      if (!match) continue;
+      const [, title, url, description] = match;
+      if (!title || !url) continue;
+      if (SUB_INDEX_RE.test(url)) {
+        if (!seenIndexes.has(url) && seenIndexes.size <= MAX_SUB_INDEXES) {
+          seenIndexes.add(url);
+          subIndexes.push(url);
+        }
+        continue;
+      }
+      const pageUrl = toPageUrl(url);
+      if (seenPages.has(pageUrl)) continue;
+      seenPages.add(pageUrl);
+      entries.push({ title, url: pageUrl, description: description ?? "" });
+    }
+    return subIndexes;
+  };
+
+  let pending = parse(await fetchIndexText(LLMS_TXT_URL));
+  while (pending.length > 0) {
+    // A broken sub-index shouldn't take down search over the rest.
+    const texts = await Promise.all(pending.map((url) => fetchIndexText(url).catch(() => "")));
+    pending = texts.flatMap(parse);
   }
 
   cachedIndex = { entries, fetchedAt: Date.now() };
   return entries;
 }
 
+/**
+ * Pages to rank above everything else that matches a topic. The plain word
+ * count favours third-party tutorials whose titles repeat the query
+ * ("send WhatsApp after a call with Make.com") over the native feature, so
+ * the assistant ends up recommending a Make.com scenario instead of the
+ * built-in node. When the query contains any of `terms`, the page's score is
+ * multiplied by `factor`.
+ */
+const SEARCH_BOOSTS: { path: string; terms: string[]; factor: number }[] = [
+  { path: "/workflows/aisensy-whatsapp", terms: ["whatsapp", "aisensy", "wa"], factor: 3 },
+  { path: "/workflows/introduction", terms: ["whatsapp", "workflow", "workflows"], factor: 1.5 },
+];
+
+// Where a word matches says a lot about relevance: a hit in the title beats
+// one in the URL slug, which beats one buried in the description.
+const TITLE_WEIGHT = 3;
+const URL_WEIGHT = 2;
+const DESCRIPTION_WEIGHT = 1;
+
+/** "messages" should still find "message"; keep short words like "sms" whole. */
+function normalizeWord(word: string): string {
+  return word.length > 3 && word.endsWith("s") ? word.slice(0, -1) : word;
+}
+
 function scoreEntry(entry: DocEntry, queryWords: string[]): number {
-  const haystack = `${entry.title} ${entry.description} ${entry.url}`.toLowerCase();
-  return queryWords.reduce((score, word) => (haystack.includes(word) ? score + 1 : score), 0);
+  const title = entry.title.toLowerCase();
+  const url = entry.url.toLowerCase();
+  const description = entry.description.toLowerCase();
+
+  let score = 0;
+  for (const word of queryWords.map(normalizeWord)) {
+    if (title.includes(word)) score += TITLE_WEIGHT;
+    if (url.includes(word)) score += URL_WEIGHT;
+    if (description.includes(word)) score += DESCRIPTION_WEIGHT;
+  }
+  if (score === 0) return 0;
+
+  const path = new URL(entry.url).pathname.replace(DOCS_PATH_PREFIX, "");
+  for (const boost of SEARCH_BOOSTS) {
+    if (boost.path === path && boost.terms.some((term) => queryWords.includes(term))) {
+      score *= boost.factor;
+    }
+  }
+  return score;
 }
 
 /**
