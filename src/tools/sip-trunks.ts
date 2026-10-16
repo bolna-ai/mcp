@@ -58,7 +58,7 @@ export function registerSipTrunksTools(server: McpServer) {
     {
       title: "Create SIP trunk",
       description:
-        "Creates a new SIP trunk (bring-your-own-telephony) with gateway and authentication details. Use auth_type 'userpass' with auth_username/auth_password, or 'ip-based' with ip_identifiers. media_encryption 'sdes' requires transport 'transport-tls'.",
+        "Legacy SIP trunk (deprecated): Creates a new SIP trunk (bring-your-own-telephony) with gateway and authentication details. Use auth_type 'userpass' with auth_username/auth_password, or 'ip-based' with ip_identifiers. media_encryption 'sdes' requires transport 'transport-tls'. For new setups use create_trunk.",
       inputSchema: {
         name: z.string().min(1, "name is required"),
         provider: z.string().min(1, "provider is required"),
@@ -112,7 +112,7 @@ export function registerSipTrunksTools(server: McpServer) {
     "get_sip_trunk",
     {
       title: "Get SIP trunk",
-      description: "Retrieves full details of a single SIP trunk by ID.",
+      description: "Legacy SIP trunk (deprecated): Retrieves full details of a single SIP trunk by ID. For new setups use get_trunk.",
       inputSchema: { trunk_id: trunkIdSchema, api_key: apiKeyOverrideSchema() },
       annotations: { title: "Get SIP trunk", readOnlyHint: true, openWorldHint: true },
     },
@@ -131,7 +131,8 @@ export function registerSipTrunksTools(server: McpServer) {
     "list_sip_trunks",
     {
       title: "List SIP trunks",
-      description: "Lists all SIP trunks on the account, optionally filtered by active status.",
+      description:
+        "Legacy SIP trunk (deprecated): Lists all SIP trunks on the account, optionally filtered by active status. For new setups use list_trunks.",
       inputSchema: { is_active: z.boolean().optional(), api_key: apiKeyOverrideSchema() },
       annotations: { title: "List SIP trunks", readOnlyHint: true, openWorldHint: true },
     },
@@ -151,7 +152,7 @@ export function registerSipTrunksTools(server: McpServer) {
     {
       title: "Update SIP trunk",
       description:
-        "Partially updates a SIP trunk. gateways and ip_identifiers, if provided, fully replace the existing list rather than merging — resend the complete array. provider and auth_type cannot be changed after creation.",
+        "Legacy SIP trunk (deprecated): Partially updates a SIP trunk. gateways and ip_identifiers, if provided, fully replace the existing list rather than merging — resend the complete array. provider and auth_type cannot be changed after creation. For new setups use update_trunk.",
       inputSchema: {
         trunk_id: trunkIdSchema,
         name: z.string().optional(),
@@ -195,7 +196,7 @@ export function registerSipTrunksTools(server: McpServer) {
     {
       title: "Delete SIP trunk",
       description:
-        "Permanently deletes a SIP trunk and cascades to all its gateways, IP identifiers, and phone numbers.",
+        "Legacy SIP trunk (deprecated): Permanently deletes a SIP trunk and cascades to all its gateways, IP identifiers, and phone numbers. For new setups use delete_trunk.",
       inputSchema: { trunk_id: trunkIdSchema, api_key: apiKeyOverrideSchema() },
       annotations: { title: "Delete SIP trunk", readOnlyHint: false, destructiveHint: true },
     },
@@ -217,7 +218,7 @@ export function registerSipTrunksTools(server: McpServer) {
     {
       title: "Add number to SIP trunk",
       description:
-        "Adds a DID phone number to a SIP trunk. After adding, patch the agent's telephony provider to 'sip-trunk' (via update_agent) to actually route calls through this number.",
+        "Legacy SIP trunk (deprecated): Adds a DID phone number to a SIP trunk. After adding, patch the agent's telephony provider to 'sip-trunk' (via update_agent) to actually route calls through this number. For new setups use add_number_to_trunk.",
       inputSchema: {
         trunk_id: trunkIdSchema,
         phone_number: z.string().min(1, "phone_number is required"),
@@ -247,7 +248,7 @@ export function registerSipTrunksTools(server: McpServer) {
     {
       title: "Remove number from SIP trunk",
       description:
-        "Removes a phone number from a SIP trunk. If it was mapped to an agent, that mapping is removed too.",
+        "Legacy SIP trunk (deprecated): Removes a phone number from a SIP trunk. If it was mapped to an agent, that mapping is removed too. For new setups use remove_number_from_trunk.",
       inputSchema: {
         trunk_id: trunkIdSchema,
         phone_number_id: z.string().min(1, "phone_number_id is required"),
@@ -274,7 +275,8 @@ export function registerSipTrunksTools(server: McpServer) {
     "list_trunk_numbers",
     {
       title: "List numbers on SIP trunk",
-      description: "Lists all phone numbers assigned to a SIP trunk.",
+      description:
+        "Legacy SIP trunk (deprecated): Lists all phone numbers assigned to a SIP trunk. For new setups use get_trunk, whose numbers field lists them.",
       inputSchema: { trunk_id: trunkIdSchema, api_key: apiKeyOverrideSchema() },
       annotations: { title: "List numbers on SIP trunk", readOnlyHint: true, openWorldHint: true },
     },

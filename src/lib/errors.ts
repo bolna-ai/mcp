@@ -20,6 +20,7 @@ export class BolnaApiError extends Error {
   status: number;
   bolnaMessage: string;
   retryAfter?: string;
+  code?: string;
 
   constructor(status: number, body: unknown, retryAfter?: string) {
     const bolnaMessage = extractMessage(body);
@@ -28,7 +29,19 @@ export class BolnaApiError extends Error {
     this.status = status;
     this.bolnaMessage = bolnaMessage;
     this.retryAfter = retryAfter;
+    this.code = extractCode(body);
   }
+}
+
+// The coded envelope {"detail": {"code", "message"}} used by the workflow
+// engine and the /trunk routes.
+function extractCode(body: unknown): string | undefined {
+  const detail = body && typeof body === "object" ? (body as Record<string, unknown>).detail : undefined;
+  if (detail && typeof detail === "object" && !Array.isArray(detail)) {
+    const code = (detail as Record<string, unknown>).code;
+    if (typeof code === "string") return code;
+  }
+  return undefined;
 }
 
 function extractMessage(body: unknown): string {
@@ -41,6 +54,10 @@ function extractMessage(body: unknown): string {
     // rather than {"message": "..."} — confirmed against the live API.
     if (typeof record.detail === "string" && record.detail.length > 0) {
       return record.detail;
+    }
+    // FastAPI request validation: {"detail": [{"loc", "msg", "type"}]}.
+    if (Array.isArray(record.detail) && record.detail.length > 0) {
+      return record.detail.map(validationIssue).join("; ");
     }
     // The workflow engine nests its error: {"detail": {"code", "message", "errors"?}}.
     if (record.detail && typeof record.detail === "object") {
@@ -55,6 +72,12 @@ function extractMessage(body: unknown): string {
   }
   if (typeof body === "string" && body.length > 0) return body;
   return "no further details were returned by the Bolna API";
+}
+
+function validationIssue(issue: unknown): string {
+  const { loc, msg } = (issue ?? {}) as Record<string, unknown>;
+  const field = Array.isArray(loc) ? loc.filter((part) => part !== "body").join(".") : "";
+  return field ? `${field}: ${msg}` : String(msg);
 }
 
 function withFieldErrors(message: string, errors: unknown): string {
@@ -88,6 +111,8 @@ function describeError(err: unknown, context: ToolErrorContext): string {
     switch (err.status) {
       case 401:
       case 403:
+        // A coded refusal is about the request, not the key.
+        if (err.code) return err.message;
         // The live API returns 403 (not 401) for an invalid/expired key.
         return "Bolna API key invalid or expired. Provide a valid Bolna API key.";
       case 404: {

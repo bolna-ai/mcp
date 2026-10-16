@@ -48,6 +48,17 @@ const OPERATORS = [
 const CONDITION_TYPES = ["llm", "expression", "unconditional", "event"] as const;
 const NODE_TYPES = ["llm", "static", "router"] as const;
 
+// dashboard-backend's TELEPHONY_PROVIDER_AUDIO_FORMATS; `sip-trunk` is a
+// legacy SIP trunk, `trunk` a SIP trunk.
+const TELEPHONY_AUDIO_FORMATS = {
+  twilio: "wav",
+  plivo: "wav",
+  exotel: "wav",
+  vobiz: "wav",
+  "sip-trunk": "ulaw",
+  trunk: "linear16",
+} as const;
+
 // Factories rather than shared instances, for the same $ref-collapsing
 // reason documented on e164Phone in schemas.ts.
 function edgeSchema() {
@@ -406,7 +417,7 @@ export function registerGraphAgentsTools(server: McpServer) {
         graph: graphSchema(),
         webhook_url: z.string().url().optional(),
         telephony_provider: z
-          .enum(["twilio", "plivo", "exotel", "vobiz", "sip-trunk"])
+          .enum(["twilio", "plivo", "exotel", "vobiz", "sip-trunk", "trunk"])
           .optional()
           .default("plivo"),
         language: z.string().optional().default("en").describe("Transcriber language code, e.g. en, hi."),
@@ -427,7 +438,7 @@ export function registerGraphAgentsTools(server: McpServer) {
 
       const apiKey = getApiKey(extra as any, args.api_key);
       const telephony = args.telephony_provider;
-      const audioFormat = telephony === "sip-trunk" ? "ulaw" : "wav";
+      const audioFormat = TELEPHONY_AUDIO_FORMATS[telephony];
       const llm_config = {
         provider: "openai",
         model: "gpt-4.1-mini",
