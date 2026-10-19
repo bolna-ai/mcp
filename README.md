@@ -1,7 +1,7 @@
 # Bolna MCP Server
 
 Remote MCP server (Streamable HTTP) wrapping the [Bolna](https://bolna.ai) voice
-AI REST API (`https://api.bolna.ai`): 115 tools covering nearly every documented
+AI REST API (`https://api.bolna.ai`): 116 tools covering nearly every documented
 Bolna endpoint, TypeScript, deployed on Vercel via `mcp-handler`.
 
 **Live at [mcp.bolna.ai](https://mcp.bolna.ai)** — that page has the same
@@ -18,7 +18,7 @@ docs are documented in the comment block at the top of
 
 | Endpoint | Tools | For |
 |---|---|---|
-| `/api/mcp` | all 115 | Anyone connecting the server themselves |
+| `/api/mcp` | all 116 | Anyone connecting the server themselves |
 | `/api/connector/mcp` | 9 | The Claude connector directory listing |
 
 **The directory surface is a fixed subset.** A directory listing is reviewed
@@ -79,7 +79,7 @@ as `api_key`.
 
 ## Available tools
 
-115 tools across 17 categories. "Write" tools flagged **Destructive** modify,
+116 tools across 17 categories. "Write" tools flagged **Destructive** modify,
 remove, or spend money and typically prompt for confirmation in MCP clients
 that respect tool annotations.
 
@@ -226,9 +226,10 @@ SIP trunk tools above.
 ### Workflows
 
 Multi-step, per-contact automations (call an agent, branch on the outcome,
-wait, call an API, message over WhatsApp, retry, and so on) — distinct from
-a single agent's own conversation. A workflow is edited as a draft, then
-published as an immutable version before it can run.
+wait, call an API, wait for a callback from your own system, message over
+WhatsApp, retry, and so on) — distinct from a single agent's own
+conversation. A workflow is edited as a draft, then published as an
+immutable version before it can run.
 
 | Tool | Type | Description |
 |---|---|---|
@@ -246,6 +247,7 @@ published as an immutable version before it can run.
 | `get_workflow_version` | Read | Retrieve a specific published version's node graph. |
 | `run_workflow` | Write, Destructive | Run a single contact through the latest published version. Places real calls/messages. |
 | `list_workflow_node_types` | Read | Every node type the engine supports, with its config parameters. |
+| `get_workflow_callback` | Read | A callback node's URL and signing secret, optionally with the last payload it received. |
 
 ### Workflow campaigns
 
@@ -438,7 +440,7 @@ interpolation in headers yet, so the key goes in directly:
 
 Instead of the `mcp-remote` bridge above, you can install this as a proper
 [Desktop Extension](https://github.com/modelcontextprotocol/mcpb) (`.mcpb`) —
-a local, stdio-based build of the same 115 tools, packaged with a manifest so
+a local, stdio-based build of the same 116 tools, packaged with a manifest so
 Claude Desktop can install it with one click and prompt you for your API key
 itself (no config file editing).
 
