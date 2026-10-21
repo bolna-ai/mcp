@@ -30,14 +30,7 @@ interface BatchExecutionSummary {
 }
 
 // Mirrors DEBUG_SECTIONS in dashboard-backend routes/executions.py.
-const DEBUG_SECTIONS = [
-  "execution",
-  "progression",
-  "logs",
-  "agent_snapshot",
-  "extractions",
-  "audio_insights",
-] as const;
+const DEBUG_SECTIONS = ["execution", "progression", "logs"] as const;
 
 const jsonResult = (data: unknown) => ({
   content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }],
@@ -75,7 +68,7 @@ export function registerExecutionsTools(server: McpServer) {
     {
       title: "Get call debug bundle",
       description:
-        "Fetches everything the dashboard's debugging view shows for one call execution, in a single request: the execution (status, transcript, cost, telephony data), turn-by-turn progression with per-turn latency, raw pipeline logs plus webhook delivery status, the agent config version the call actually ran on, extraction results, and audio insights. Pass `include` to fetch only some sections. Raw logs are the largest, so leave them out unless you need them. Sections the caller can't see, that don't exist for this call, or that failed come back null, and the reason (`forbidden`, `not_available`, `error`) is listed under `unavailable`. Extractions are admin-only and audio insights are staff-only.",
+        "Fetches what the dashboard's debugging view shows a customer for one call execution, in a single request: the execution (status, transcript, cost, telephony data), turn-by-turn latency analytics with the conversation transcript, and the raw pipeline logs plus webhook delivery status. Pass `include` to fetch only some sections. Raw logs are the largest, so leave them out unless you need them. A section that doesn't exist for this call, or that failed, comes back null, and the reason (`not_available` or `error`) is listed under `unavailable`. This always returns the customer view, so staff-only debugging data is not included.",
       inputSchema: {
         execution_id: executionIdSchema,
         include: z
