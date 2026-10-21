@@ -68,7 +68,7 @@ export function registerExecutionsTools(server: McpServer) {
     {
       title: "Get call debug bundle",
       description:
-        "Fetches what the dashboard's debugging view shows a customer for one call execution, in a single request: the execution (status, transcript, cost, telephony data), turn-by-turn latency analytics with the conversation transcript, and the raw pipeline logs plus webhook delivery status. Pass `include` to fetch only some sections. Raw logs are the largest, so leave them out unless you need them. A section that doesn't exist for this call, or that failed, comes back null, and the reason (`not_available` or `error`) is listed under `unavailable`. This always returns the customer view, so staff-only debugging data is not included.",
+        "Fetches what you need to debug one call execution, in a single request: the execution's status, cost, telephony data, latency and extractions; per-turn latency analytics with the structured transcript; and the pipeline logs (transcriber, LLM, synthesizer, function calls, webhook delivery). It always returns the customer view, so staff-only data is not included. To keep the result small, empty fields are dropped and LLM requests are delta-encoded. The first `llm` request is the full rendered prompt that ran. Each later one has only the text it adds, and `data_shared_prefix_chars` says how many leading characters it shares with the previous request (full text = previous_full[:data_shared_prefix_chars] + data). Pass `include` to fetch only some sections. A section that doesn't exist for this call, or that failed, comes back null, and the reason (`not_available` or `error`) is listed under `unavailable`. For anything trimmed here, use get_execution (full record, including the prose transcript), get_execution_raw_logs (logs without delta encoding) or get_agent (agent config).",
       inputSchema: {
         execution_id: executionIdSchema,
         include: z
@@ -88,7 +88,8 @@ export function registerExecutionsTools(server: McpServer) {
           `/executions/${encodeURIComponent(execution_id)}/debug${query}`,
           apiKey
         );
-        return jsonResult(bundle);
+        // Compact JSON: indentation alone adds ~3% to an already large result.
+        return { content: [{ type: "text" as const, text: JSON.stringify(bundle) }] };
       } catch (err) {
         return toErrorResult(err, { executionId: execution_id });
       }
