@@ -52,6 +52,7 @@
     { "name": "list_agent_executions", "description": "Call history for one agent. Paginated, defaults to the last 7 days." },
     { "name": "get_execution", "description": "Full details of one call: transcript, status, cost, telephony data." },
     { "name": "get_execution_raw_logs", "description": "Raw pipeline logs (transcriber/LLM/synthesizer) for a call." },
+    { "name": "get_execution_debug", "description": "Everything the dashboard's debugging view shows for a call, in one request." },
     { "name": "list_batch_executions", "description": "Every call execution within a batch. Paginated." },
     { "name": "create_batch", "description": "Create a batch of outbound calls from a list of recipients." },
     { "name": "get_batch", "description": "A batch's status, schedule, and contact counts." },

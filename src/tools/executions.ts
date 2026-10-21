@@ -2,6 +2,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { bolnaFetch } from "../lib/bolna-client";
 import { toErrorResult } from "../lib/errors";
 import { getApiKey } from "../lib/auth";
+import { z } from "zod";
 import {
   apiKeyOverrideSchema,
   batchIdSchema,
@@ -28,6 +29,16 @@ interface BatchExecutionSummary {
   created_at: string;
 }
 
+// Mirrors DEBUG_SECTIONS in dashboard-backend routes/executions.py.
+const DEBUG_SECTIONS = [
+  "execution",
+  "progression",
+  "logs",
+  "agent_snapshot",
+  "extractions",
+  "audio_insights",
+] as const;
+
 const jsonResult = (data: unknown) => ({
   content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }],
 });
@@ -53,6 +64,38 @@ export function registerExecutionsTools(server: McpServer) {
           apiKey
         );
         return jsonResult(logs);
+      } catch (err) {
+        return toErrorResult(err, { executionId: execution_id });
+      }
+    }
+  );
+
+  server.registerTool(
+    "get_execution_debug",
+    {
+      title: "Get call debug bundle",
+      description:
+        "Fetches everything the dashboard's debugging view shows for one call execution, in a single request: the execution (status, transcript, cost, telephony data), turn-by-turn progression with per-turn latency, raw pipeline logs plus webhook delivery status, the agent config version the call actually ran on, extraction results, and audio insights. Pass `include` to fetch only some sections. Raw logs are the largest, so leave them out unless you need them. Sections the caller can't see, that don't exist for this call, or that failed come back null, and the reason (`forbidden`, `not_available`, `error`) is listed under `unavailable`. Extractions are admin-only and audio insights are staff-only.",
+      inputSchema: {
+        execution_id: executionIdSchema,
+        include: z
+          .array(z.enum(DEBUG_SECTIONS))
+          .min(1)
+          .optional()
+          .describe("Sections to return. Omit for all of them."),
+        api_key: apiKeyOverrideSchema(),
+      },
+      annotations: { title: "Get call debug bundle", readOnlyHint: true, openWorldHint: true },
+    },
+    async ({ execution_id, include, api_key }, extra) => {
+      const apiKey = getApiKey(extra as any, api_key);
+      try {
+        const query = include ? `?include=${encodeURIComponent([...new Set(include)].join(","))}` : "";
+        const bundle = await bolnaFetch(
+          `/executions/${encodeURIComponent(execution_id)}/debug${query}`,
+          apiKey
+        );
+        return jsonResult(bundle);
       } catch (err) {
         return toErrorResult(err, { executionId: execution_id });
       }
