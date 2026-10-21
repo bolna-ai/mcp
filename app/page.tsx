@@ -21,6 +21,7 @@ const TOOL_CATEGORIES: { category: string; tools: string[] }[] = [
       "list_agent_executions",
       "get_execution",
       "get_execution_raw_logs",
+      "get_execution_debug",
       "list_batch_executions",
     ],
   },

@@ -103,6 +103,7 @@ that respect tool annotations.
 | `list_agent_executions` | Read | Call history for one agent. Paginated, defaults to the last 7 days. |
 | `get_execution` | Read | Full details of one call: transcript, status, cost, telephony data. |
 | `get_execution_raw_logs` | Read | Raw pipeline logs (transcriber/LLM/synthesizer) for a call. |
+| `get_execution_debug` | Read | Everything needed to debug a call, in one compact request: execution, per-turn latency and transcript, logs with delta-encoded LLM requests. |
 | `list_batch_executions` | Read | Every call execution within a batch. Paginated. |
 
 ### Batches
