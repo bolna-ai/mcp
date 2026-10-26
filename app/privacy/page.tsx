@@ -3,11 +3,11 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "Privacy Policy — Bolna MCP Server",
   description:
-    "What the Bolna MCP server does and does not do with your data.",
+    "The Bolna MCP server never stores your requests, credentials or call data. It logs only tool name, status and latency, and sends nothing to analytics or ads.",
   openGraph: {
     title: "Privacy Policy — Bolna MCP Server",
     description:
-      "What the Bolna MCP server does and does not do with your data.",
+      "The Bolna MCP server never stores your requests, credentials or call data. It logs only tool name, status and latency, and sends nothing to analytics or ads.",
     url: "https://mcp.bolna.ai/privacy",
     type: "article",
     images: ["/icon.png"],
@@ -16,7 +16,7 @@ export const metadata: Metadata = {
     card: "summary",
     title: "Privacy Policy — Bolna MCP Server",
     description:
-      "What the Bolna MCP server does and does not do with your data.",
+      "The Bolna MCP server never stores your requests, credentials or call data. It logs only tool name, status and latency, and sends nothing to analytics or ads.",
     images: ["/icon.png"],
   },
 };
