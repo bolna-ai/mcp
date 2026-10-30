@@ -4,6 +4,7 @@ import { bolnaFetch } from "../lib/bolna-client";
 import { toErrorResult } from "../lib/errors";
 import { getApiKey } from "../lib/auth";
 import { agentIdSchema, apiKeyOverrideSchema, e164Phone } from "./schemas";
+import { invalidGraphResult, validateAgentGraph } from "./graph-agents";
 
 const jsonResult = (data: unknown) => ({
   content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }],
@@ -81,7 +82,7 @@ export function registerWriteTools(server: McpServer) {
     {
       title: "Create agent",
       description:
-        "Creates a new voice AI agent in the connected Bolna account with the given name, prompts, and model configuration. Returns the new agent's ID. See the Bolna Agent API (https://docs.bolna.ai/api-reference/agent/v2/create) for the full configuration schema.",
+        "Creates a new voice AI agent in the connected Bolna account with the given name, prompts, and model configuration. Returns the new agent's ID. A graph agent (llm_agent.agent_type \"graph_agent\") is validated like create_graph_agent and nothing is created if the graph has errors. See the Bolna Agent API (https://docs.bolna.ai/api-reference/agent/v2/create) for the full configuration schema.",
       inputSchema: {
         agent_config: agentConfigSchema,
         agent_prompts: agentPromptsSchema,
@@ -90,6 +91,11 @@ export function registerWriteTools(server: McpServer) {
       annotations: { title: "Create agent", readOnlyHint: false, destructiveHint: false },
     },
     async ({ agent_config, agent_prompts, api_key }, extra) => {
+      // A graph agent sent through the generic tool gets the same checks as
+      // create_graph_agent, so a broken graph is reported in full up front
+      // instead of one API 400 at a time.
+      const graphReport = validateAgentGraph(agent_config);
+      if (graphReport && !graphReport.valid) return invalidGraphResult(graphReport);
       const apiKey = getApiKey(extra as any, api_key);
       try {
         // Stamped "mcp" (not caller-configurable) so Bolna can attribute
@@ -100,7 +106,7 @@ export function registerWriteTools(server: McpServer) {
           method: "POST",
           body: { agent_config, agent_prompts, creation_source: "mcp" },
         });
-        return jsonResult(result);
+        return jsonResult(graphReport ? { ...(result as object), validation_warnings: graphReport.warnings } : result);
       } catch (err) {
         return toErrorResult(err);
       }

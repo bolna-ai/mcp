@@ -131,7 +131,10 @@ function nodeSchema() {
           '"llm" (default) speaks from `prompt`; "static" plays `static_message` from cached audio (~50ms, no LLM cost); "router" never speaks and only dispatches via its edges.'
         ),
       prompt: z.string().nullish().describe("Node instructions for LLM nodes. Supports {variable} substitution."),
-      static_message: z.string().nullish().describe("Fixed line spoken by a static node."),
+      static_message: z
+        .union([z.string(), z.record(z.string())])
+        .nullish()
+        .describe('Fixed line spoken by a static node, or a {language: text} map, e.g. {"en": "Hi", "hi": "Namaste"}.'),
       description: z
         .string()
         .nullish()
@@ -149,12 +152,15 @@ function nodeSchema() {
 function graphSchema() {
   return z
     .object({
-      current_node_id: z.string().min(1).describe("ID of the starting node."),
+      current_node_id: z
+        .string()
+        .optional()
+        .describe("ID of the starting node. Required to save; validation reports it if missing."),
       nodes: z.array(nodeSchema()).min(1, "a graph needs at least one node"),
       agent_information: z
         .string()
         .optional()
-        .describe("Global prompt prepended to every node (persona, language, guardrails). Sent on every LLM call, so keep it tight."),
+        .describe("Global prompt prepended to every node (persona, language, guardrails). Required to save. Sent on every LLM call, so keep it tight."),
       routing_instructions: z
         .string()
         .optional()
@@ -174,6 +180,35 @@ function graphSchema() {
     .passthrough();
 }
 
+// Bolna's llm_config models drop keys they don't define when an agent is
+// saved, so anything outside these sets would vanish silently; it's reported
+// as a warning instead. The sets are each schema's own keys plus the ones
+// only the runtime (bolna GraphAgentConfig / graph_agent.py), dashboard-backend
+// or the dashboard's graph editor read.
+const KNOWN_GRAPH_FIELDS = new Set([
+  ...Object.keys(graphSchema().shape),
+  "family", "request_json", "stop", "top_k", "top_p", "min_p", "frequency_penalty", "presence_penalty",
+  "base_url", "reasoning_effort", "verbosity", "use_responses_api", "compact_threshold", "agent_flow_type",
+  "extraction_details", "summarization_details", "context_data", "rag_config", "routing_provider",
+  "routing_base_url", "routing_api_version", "routing_llm_key", "route_routing_to_conversation", "aux_model",
+  "aux_provider", "llm_key", "llm_provider", "overflow_llm", "service_tier", "turn_based_conversation",
+  "tool_scopes", "extra_body", "managed_by",
+]);
+const KNOWN_NODE_FIELDS = new Set([
+  ...Object.keys(nodeSchema().shape),
+  "examples", "function_call", "position", "x", "y", "reinvoke_on_silence", "number_of_words_for_interruption",
+  "llm_config", "routing_model",
+]);
+const KNOWN_EDGE_FIELDS = new Set([...Object.keys(edgeSchema().shape), "label", "id", "source", "target", "data"]);
+
+const isObject = (v: unknown): v is Record<string, any> => !!v && typeof v === "object" && !Array.isArray(v);
+
+/** A prompt or static_message has text: a non-blank string, or a {lang: text} map with one. */
+function hasText(v: unknown): boolean {
+  if (typeof v === "string") return v.trim().length > 0;
+  return isObject(v) && Object.values(v).some((t) => typeof t === "string" && t.trim().length > 0);
+}
+
 type Graph = z.infer<ReturnType<typeof graphSchema>>;
 type GraphNode = Graph["nodes"][number];
 
@@ -184,14 +219,63 @@ interface ValidationIssue {
   edge_index?: number;
 }
 
-/** The editor's documented validation rules (docs/graph-agent/validation). */
-export function validateGraph(
-  graph: { current_node_id?: unknown; nodes?: unknown },
-  toolNames?: Set<string>
-): { valid: boolean; errors: ValidationIssue[]; warnings: ValidationIssue[] } {
+export type GraphReport = { valid: boolean; errors: ValidationIssue[]; warnings: ValidationIssue[] };
+
+/**
+ * The editor's documented validation rules (docs/graph-agent/validation),
+ * plus the checks bolna's GraphAgentConfig model enforces on save. Takes
+ * unparsed input too (create_agent passes the user's raw llm_config), so it
+ * never assumes a field has the schema's type.
+ */
+export function validateGraph(graph: unknown, toolNames?: Set<string>): GraphReport {
   const errors: ValidationIssue[] = [];
   const warnings: ValidationIssue[] = [];
-  const nodes = (Array.isArray(graph.nodes) ? graph.nodes : []) as GraphNode[];
+  if (!isObject(graph)) {
+    errors.push({ code: "invalid_graph", message: "The graph config must be an object." });
+    return { valid: false, errors, warnings };
+  }
+
+  const unsupported = (field: string, where: string, at: { node_id?: string; edge_index?: number } = {}) =>
+    warnings.push({
+      code: "unsupported_field",
+      message: `"${field}" ${where} isn't a graph-agent setting Bolna supports, so it won't be saved or used on calls.`,
+      ...at,
+    });
+  for (const field of Object.keys(graph).filter((k) => !KNOWN_GRAPH_FIELDS.has(k))) {
+    unsupported(field, "in the graph config");
+  }
+
+  const rawNodes: unknown[] = Array.isArray(graph.nodes) ? graph.nodes : [];
+  if (graph.nodes !== undefined && !Array.isArray(graph.nodes)) {
+    errors.push({ code: "invalid_nodes", message: "nodes must be a list." });
+  }
+  const nodes: GraphNode[] = [];
+  rawNodes.forEach((node, i) => {
+    if (isObject(node)) nodes.push(node as GraphNode);
+    else errors.push({ code: "invalid_node", message: `Node ${i} isn't an object.` });
+  });
+  const edgesOf = (node: GraphNode): any[] => (Array.isArray(node.edges) ? node.edges.filter(isObject) : []);
+
+  for (const node of nodes) {
+    for (const field of Object.keys(node).filter((k) => !KNOWN_NODE_FIELDS.has(k))) {
+      unsupported(field, `on node "${node.id}"`, { node_id: node.id });
+    }
+    if (node.edges != null && !Array.isArray(node.edges)) {
+      errors.push({ code: "invalid_edges", message: `edges on node "${node.id}" must be a list.`, node_id: node.id });
+    }
+    edgesOf(node).forEach((edge, i) => {
+      for (const field of Object.keys(edge).filter((k) => !KNOWN_EDGE_FIELDS.has(k))) {
+        unsupported(field, `on edge ${i} of node "${node.id}"`, { node_id: node.id, edge_index: i });
+      }
+    });
+  }
+
+  if (!hasText(graph.agent_information)) {
+    errors.push({
+      code: "missing_agent_information",
+      message: "agent_information (the global prompt shared by every node) is required.",
+    });
+  }
 
   if (nodes.length === 0) {
     errors.push({ code: "no_nodes", message: "The graph has no nodes." });
@@ -200,7 +284,7 @@ export function validateGraph(
 
   const ids = new Set<string>();
   for (const node of nodes) {
-    if (!node.id) {
+    if (typeof node.id !== "string" || !node.id) {
       errors.push({ code: "missing_node_id", message: "A node has no id." });
       continue;
     }
@@ -214,29 +298,46 @@ export function validateGraph(
   if (typeof start !== "string" || !ids.has(start)) {
     errors.push({
       code: "no_start_node",
-      message: `current_node_id ${start === undefined ? "is not set" : `"${String(start)}" doesn't match any node id`}.`,
+      message: `current_node_id ${start === undefined ? "is not set" : `"${String(start)}" doesn't match any node id`}. Set it to the node the call should begin on.`,
     });
   }
 
   const targeted = new Set<string>();
   for (const node of nodes) {
     const nodeType = node.node_type ?? "llm";
-    if (nodeType === "llm" && !node.prompt?.trim()) {
+    const edges = edgesOf(node);
+    if (nodeType === "llm" && !hasText(node.prompt)) {
       warnings.push({ code: "empty_llm_prompt", message: `LLM node "${node.id}" has no prompt.`, node_id: node.id });
     }
-    if (nodeType === "static" && !node.static_message?.trim()) {
+    if (nodeType === "static" && !hasText(node.static_message)) {
       warnings.push({ code: "static_without_message", message: `Static node "${node.id}" has no static_message.`, node_id: node.id });
     }
-    if (nodeType === "router" && (node.prompt || node.static_message)) {
-      errors.push({
-        code: "router_speaks",
-        message: `Router node "${node.id}" sets prompt or static_message; a router never speaks.`,
-        node_id: node.id,
-      });
+    if (nodeType === "router") {
+      if (node.prompt || node.static_message) {
+        errors.push({
+          code: "router_speaks",
+          message: `Router node "${node.id}" sets prompt or static_message; a router never speaks.`,
+          node_id: node.id,
+        });
+      }
+      if (edges.some((e) => e.condition_type === "event")) {
+        errors.push({
+          code: "router_event_edge",
+          message: `Router node "${node.id}" has an event edge; a call never rests on a router, so it would never fire.`,
+          node_id: node.id,
+        });
+      }
+      if (!edges.some((e) => e.condition_type === "unconditional")) {
+        errors.push({
+          code: "router_without_catch_all",
+          message: `Router node "${node.id}" needs one unconditional catch-all edge so it always advances.`,
+          node_id: node.id,
+        });
+      }
     }
 
     const rag = node.rag_config as Record<string, any> | undefined;
-    if (rag) {
+    if (isObject(rag)) {
       const vectorId = rag.vector_store?.provider_config?.vector_id;
       const vectorIds = rag.vector_store?.provider_config?.vector_ids;
       if (!vectorId && !(Array.isArray(vectorIds) && vectorIds.length > 0)) {
@@ -244,8 +345,8 @@ export function validateGraph(
       }
     }
 
-    if (toolNames) {
-      for (const match of (node.prompt ?? "").matchAll(/(?:^|[^\w.])@([A-Za-z0-9_]+)/g)) {
+    if (toolNames && typeof node.prompt === "string") {
+      for (const match of node.prompt.matchAll(/(?:^|[^\w.])@([A-Za-z0-9_]+)/g)) {
         if (match[1] && !toolNames.has(match[1])) {
           errors.push({
             code: "unreachable_tool",
@@ -256,7 +357,6 @@ export function validateGraph(
       }
     }
 
-    const edges = node.edges ?? [];
     const deterministicPriorities = new Map<number, number>();
     edges.forEach((edge, i) => {
       const at = { node_id: node.id, edge_index: i };
@@ -285,10 +385,12 @@ export function validateGraph(
       if (type === "event" && !edge.event_name) {
         errors.push({ code: "missing_event_name", message: `Event edge ${i} on "${node.id}" has no event_name.`, ...at });
       }
-      if (edge.parameters && Object.values(edge.parameters).some((t) => typeof t !== "string")) {
+      if (edge.parameters != null && (!isObject(edge.parameters) || Object.values(edge.parameters).some((t) => typeof t !== "string"))) {
         errors.push({ code: "bad_transition_parameters", message: `Edge ${i} on "${node.id}": parameters must be {name: type} string pairs.`, ...at });
       }
-      if (type === "llm" && edges.length > 1 && !edge.condition?.trim() && !edge.function_description?.trim()) {
+      const conditionText = typeof edge.condition === "string" ? edge.condition.trim() : "";
+      const descriptionText = typeof edge.function_description === "string" ? edge.function_description.trim() : "";
+      if (type === "llm" && edges.length > 1 && !conditionText && !descriptionText) {
         warnings.push({ code: "empty_intent_condition", message: `Intent edge ${i} on "${node.id}" has no condition text.`, ...at });
       }
       if (type === "expression" || type === "unconditional") {
@@ -307,6 +409,31 @@ export function validateGraph(
     }
   }
 
+  // A chain of routers must end at a speaking node (bolna's validate_router_graph).
+  const routerIds = new Set(nodes.filter((n) => n.node_type === "router").map((n) => n.id));
+  const routerNext = new Map(
+    nodes.filter((n) => routerIds.has(n.id)).map((n) => [n.id, edgesOf(n).map((e) => e.to_node_id).filter((t) => routerIds.has(t))])
+  );
+  const state = new Map<string, "visiting" | "done">();
+  const cycles = (id: string): boolean => {
+    state.set(id, "visiting");
+    for (const next of routerNext.get(id) ?? []) {
+      if (state.get(next) === "visiting" || (!state.has(next) && cycles(next))) return true;
+    }
+    state.set(id, "done");
+    return false;
+  };
+  for (const id of routerIds) {
+    if (!state.has(id) && cycles(id)) {
+      errors.push({
+        code: "router_cycle",
+        message: `Router nodes form a cycle involving "${id}"; a router chain must end at a node that speaks.`,
+        node_id: id,
+      });
+      break;
+    }
+  }
+
   for (const node of nodes) {
     if (node.id && node.id !== start && !targeted.has(node.id)) {
       warnings.push({ code: "unreachable_node", message: `Node "${node.id}" isn't the start node and no edge points to it.`, node_id: node.id });
@@ -316,10 +443,13 @@ export function validateGraph(
   return { valid: errors.length === 0, errors, warnings };
 }
 
+/** Tool names in api_tools.tools, in either the legacy {name} or OpenAI {function: {name}} form. */
 function apiToolNames(apiTools: unknown): Set<string> | undefined {
   const tools = (apiTools as { tools?: unknown } | undefined)?.tools;
   if (!Array.isArray(tools)) return undefined;
-  return new Set(tools.map((t) => (t as { name?: string }).name).filter((n): n is string => !!n));
+  return new Set(
+    tools.map((t) => (t as any)?.function?.name ?? (t as any)?.name).filter((n): n is string => typeof n === "string" && !!n)
+  );
 }
 
 /** Index of the task whose llm_agent is a graph agent, or -1. */
@@ -328,10 +458,19 @@ function findGraphTaskIndex(agent: any): number {
   return tasks.findIndex((t) => t?.tools_config?.llm_agent?.agent_type === "graph_agent");
 }
 
-function invalidGraphResult(report: ReturnType<typeof validateGraph>) {
+/** Validates the graph in a full agent config, or returns undefined if it isn't a graph agent. */
+export function validateAgentGraph(agent: unknown): (GraphReport & { task_index: number }) | undefined {
+  const i = findGraphTaskIndex(agent);
+  if (i < 0) return undefined;
+  const tools = (agent as any).tasks[i].tools_config;
+  return { ...validateGraph(tools.llm_agent.llm_config ?? {}, apiToolNames(tools.api_tools)), task_index: i };
+}
+
+export function invalidGraphResult(report: GraphReport) {
+  const { valid, errors, warnings } = report;
   return errorText(
     "The graph failed validation, so nothing was sent to Bolna. Fix these and retry:\n" +
-      JSON.stringify(report, null, 2)
+      JSON.stringify({ valid, errors, warnings }, null, 2)
   );
 }
 
@@ -363,10 +502,10 @@ export function registerGraphAgentsTools(server: McpServer) {
       const apiKey = getApiKey(extra as any, api_key);
       try {
         const agent: any = await bolnaFetch(`/v2/agent/${encodeURIComponent(agent_id)}`, apiKey);
-        const i = findGraphTaskIndex(agent);
-        if (i < 0) return errorText(`Agent ${agent_id} is not a graph agent (no task has llm_agent.agent_type "graph_agent").`);
-        const tools = agent.tasks[i].tools_config;
-        return jsonResult(validateGraph(tools.llm_agent.llm_config ?? {}, apiToolNames(tools.api_tools)));
+        const report = validateAgentGraph(agent);
+        if (!report) return errorText(`Agent ${agent_id} is not a graph agent (no task has llm_agent.agent_type "graph_agent").`);
+        const { task_index, ...validation } = report;
+        return jsonResult(validation);
       } catch (err) {
         return toErrorResult(err, { agentId: agent_id });
       }
