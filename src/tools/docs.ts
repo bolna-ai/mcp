@@ -134,13 +134,189 @@ function scoreEntry(entry: DocEntry, queryWords: string[]): number {
   }
   if (score === 0) return 0;
 
-  const path = new URL(entry.url).pathname.replace(DOCS_PATH_PREFIX, "");
+  return score * boostFactor(entry.url, queryWords);
+}
+
+function boostFactor(pageUrl: string, queryWords: string[]): number {
+  const path = new URL(pageUrl).pathname.replace(DOCS_PATH_PREFIX, "");
+  let factor = 1;
   for (const boost of SEARCH_BOOSTS) {
     if (boost.path === path && boost.terms.some((term) => queryWords.includes(term))) {
-      score *= boost.factor;
+      factor *= boost.factor;
     }
   }
+  return factor;
+}
+
+// Titles alone made the model fetch a whole page with get_doc for nearly
+// every docs question, one extra round-trip per page. llms-full.txt (~2MB)
+// carries the text of every page, including the tabs llms.txt collapses into
+// sub-indexes, as `# Title` + `Source: <page url>` blocks. search_docs ranks
+// its sections and returns the best few, which usually answer the question.
+const LLMS_FULL_TXT_URL = `https://${DOCS_HOST}${DOCS_PATH_PREFIX}/llms-full.txt`;
+const MAX_PASSAGES = 4;
+const MAX_PASSAGES_PER_PAGE = 2;
+const PASSAGE_CHARS = 1200;
+// The page and section names say what a section is about, so they count
+// more than a word in the body.
+const TITLE_TERM_WEIGHT = 2;
+const HEADING_TERM_WEIGHT = 3;
+// Standard BM25 constants.
+const BM25_K1 = 1.2;
+const BM25_B = 0.75;
+// Link lists at the end of pages repeat other pages' titles, so they match
+// queries well but answer nothing.
+const LINK_LIST_HEADING_RE = /^(next steps|related|see also|what's next|learn more|further reading)\b/i;
+const STOPWORDS = new Set(
+  "a an and are as at be by can do does for from how i in is it my of on or the this to what when where which with you your".split(" ")
+);
+
+interface DocSection {
+  title: string;
+  heading: string;
+  url: string;
+  text: string;
+  termCounts: Map<string, number>;
+  length: number;
+}
+
+interface SectionIndex {
+  sections: DocSection[];
+  docFrequency: Map<string, number>;
+  averageLength: number;
+  fetchedAt: number;
+}
+
+let cachedSections: SectionIndex | null = null;
+
+function tokenize(text: string): string[] {
+  return (text.toLowerCase().match(/[a-z0-9]+/g) ?? [])
+    .map(normalizeWord)
+    .filter((word) => !STOPWORDS.has(word));
+}
+
+function cleanMarkdown(text: string): string {
+  return text
+    .replace(/!\[[^\]]*\]\([^)]*\)/g, "")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
+function parseSections(fullText: string): DocSection[] {
+  const sections: DocSection[] = [];
+  const lines = fullText.split("\n");
+  let page: { title: string; url: string } | null = null;
+  let heading = "";
+  let body: string[] = [];
+
+  const flush = () => {
+    if (!page) return;
+    const text = cleanMarkdown(body.join("\n"));
+    body = [];
+    if (!text || LINK_LIST_HEADING_RE.test(heading)) return;
+    const termCounts = new Map<string, number>();
+    const add = (words: string[], weight: number) => {
+      for (const word of words) termCounts.set(word, (termCounts.get(word) ?? 0) + weight);
+    };
+    add(tokenize(text), 1);
+    add(tokenize(page.title), TITLE_TERM_WEIGHT);
+    add(tokenize(heading), HEADING_TERM_WEIGHT);
+    let length = 0;
+    for (const count of termCounts.values()) length += count;
+    sections.push({ title: page.title, heading, url: page.url, text, termCounts, length });
+  };
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i] ?? "";
+    const sourceUrl = /^Source: (https:\/\/www\.bolna\.ai\/docs\/\S+)/.exec(lines[i + 1] ?? "")?.[1];
+    // A page starts at `# Title` followed by its Source line; a bare `# ` line
+    // inside a page (e.g. in a quoted example) is just content.
+    if (line.startsWith("# ") && sourceUrl) {
+      flush();
+      page = { title: line.slice(2).trim(), url: toPageUrl(sourceUrl) };
+      heading = "";
+      i++;
+      continue;
+    }
+    if (/^#{2,3} /.test(line)) {
+      flush();
+      heading = line.replace(/^#+ /, "").trim();
+      continue;
+    }
+    body.push(line);
+  }
+  flush();
+  return sections;
+}
+
+async function getSectionIndex(): Promise<SectionIndex> {
+  if (cachedSections && Date.now() - cachedSections.fetchedAt < INDEX_TTL_MS) {
+    return cachedSections;
+  }
+  const sections = parseSections(await fetchIndexText(LLMS_FULL_TXT_URL));
+  const docFrequency = new Map<string, number>();
+  let totalLength = 0;
+  for (const section of sections) {
+    totalLength += section.length;
+    for (const term of section.termCounts.keys()) {
+      docFrequency.set(term, (docFrequency.get(term) ?? 0) + 1);
+    }
+  }
+  cachedSections = {
+    sections,
+    docFrequency,
+    averageLength: sections.length ? totalLength / sections.length : 1,
+    fetchedAt: Date.now(),
+  };
+  return cachedSections;
+}
+
+function scoreSection(section: DocSection, terms: string[], index: SectionIndex): number {
+  const n = index.sections.length;
+  let score = 0;
+  for (const term of terms) {
+    const tf = section.termCounts.get(term);
+    if (!tf) continue;
+    const df = index.docFrequency.get(term) ?? 0;
+    const idf = Math.log(1 + (n - df + 0.5) / (df + 0.5));
+    const norm = 1 - BM25_B + (BM25_B * section.length) / index.averageLength;
+    score += (idf * tf * (BM25_K1 + 1)) / (tf + BM25_K1 * norm);
+  }
   return score;
+}
+
+function trimPassage(text: string): string {
+  if (text.length <= PASSAGE_CHARS) return text;
+  const cut = text.slice(0, PASSAGE_CHARS);
+  return `${cut.slice(0, cut.lastIndexOf(" ") > 0 ? cut.lastIndexOf(" ") : PASSAGE_CHARS)}…`;
+}
+
+function searchPassages(index: SectionIndex, query: string, queryWords: string[]) {
+  const terms = [...new Set(tokenize(query))];
+  if (terms.length === 0) return [];
+  const ranked = index.sections
+    .map((section) => ({
+      section,
+      score: scoreSection(section, terms, index) * boostFactor(section.url, queryWords),
+    }))
+    .filter((r) => r.score > 0)
+    .sort((a, b) => b.score - a.score);
+
+  const perPage = new Map<string, number>();
+  const passages = [];
+  for (const { section } of ranked) {
+    const taken = perPage.get(section.url) ?? 0;
+    if (taken >= MAX_PASSAGES_PER_PAGE) continue;
+    perPage.set(section.url, taken + 1);
+    passages.push({
+      title: section.title,
+      heading: section.heading || undefined,
+      url: section.url,
+      text: trimPassage(section.text),
+    });
+    if (passages.length >= MAX_PASSAGES) break;
+  }
+  return passages;
 }
 
 /**
@@ -174,7 +350,7 @@ function resolveDocUrl(input: string): string {
 }
 
 const jsonResult = (data: unknown) => ({
-  content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }],
+  content: [{ type: "text" as const, text: JSON.stringify(data) }],
 });
 
 const textResult = (text: string) => ({
@@ -187,7 +363,7 @@ export function registerDocsTools(server: McpServer) {
     {
       title: "Search Bolna documentation",
       description:
-        "Searches the Bolna documentation site for pages matching a query. Returns matching page titles, URLs, and descriptions. Each URL is the public documentation page — link users straight to it. Use get_doc with a result's URL to fetch the full page content.",
+        "Searches the Bolna documentation. Returns `passages` — the best-matching sections of the docs, with their page title and URL, usually enough to answer from directly — and `results`, the matching pages with their descriptions. Each URL is the public documentation page — link users straight to it. Use get_doc with a URL only when you need the whole page.",
       inputSchema: {
         query: z.string().min(1, "query is required"),
         limit: z.number().int().min(1).max(20).optional().default(8),
@@ -196,7 +372,12 @@ export function registerDocsTools(server: McpServer) {
     },
     async ({ query, limit }) => {
       try {
-        const entries = await getDocsIndex();
+        // Passages are an addition: if llms-full.txt can't be fetched, search
+        // still answers with the page list as before.
+        const [entries, sectionIndex] = await Promise.all([
+          getDocsIndex(),
+          getSectionIndex().catch(() => null),
+        ]);
         const queryWords = query.toLowerCase().split(/\s+/).filter(Boolean);
         const results = entries
           .map((entry) => ({ entry, score: scoreEntry(entry, queryWords) }))
@@ -204,8 +385,9 @@ export function registerDocsTools(server: McpServer) {
           .sort((a, b) => b.score - a.score)
           .slice(0, limit)
           .map((r) => r.entry);
+        const passages = sectionIndex ? searchPassages(sectionIndex, query, queryWords) : [];
 
-        return jsonResult({ query, results });
+        return jsonResult({ query, passages, results });
       } catch (err) {
         return {
           content: [
