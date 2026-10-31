@@ -89,6 +89,9 @@ function withFieldErrors(message: string, errors: unknown): string {
   return `${message} (${parts.join("; ")})`;
 }
 
+// The messages Bolna's auth layer sends for a bad key or token.
+const INVALID_KEY_RE = /invalid access token|unrecognized access token|invalid api key/i;
+
 export interface ToolErrorContext {
   agentId?: string;
   executionId?: string;
@@ -113,8 +116,14 @@ function describeError(err: unknown, context: ToolErrorContext): string {
       case 403:
         // A coded refusal is about the request, not the key.
         if (err.code) return err.message;
-        // The live API returns 403 (not 401) for an invalid/expired key.
-        return "Bolna API key invalid or expired. Provide a valid Bolna API key.";
+        // The live API returns 403 (not 401) for an invalid/expired key, but
+        // also for features the account's plan doesn't include (e.g.
+        // sub-accounts outside enterprise orgs). Calling those a bad key sent
+        // users off to regenerate a key that was fine.
+        if (INVALID_KEY_RE.test(err.bolnaMessage)) {
+          return "Bolna API key invalid or expired. Provide a valid Bolna API key.";
+        }
+        return `Not permitted for this account (HTTP ${err.status}): ${err.bolnaMessage}`;
       case 404: {
         if (context.agentId) {
           return (

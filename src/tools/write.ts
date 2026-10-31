@@ -9,6 +9,12 @@ const jsonResult = (data: unknown) => ({
   content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }],
 });
 
+// A guessed voice was the most common create_agent failure: the API rejects
+// it and the model then looks the voice up and retries anyway, costing
+// several extra round-trips.
+const VOICE_GUIDANCE =
+  "TTS settings. The voice must be one the account can use: call list_tts_providers and then list_voices for the provider, model and language, and copy a voice from that result. Don't guess voice names or IDs.";
+
 // Faithful to POST /v2/agent's request body (see tools/index.ts comment
 // block). Provider-shaped sub-objects (llm_agent/synthesizer/transcriber/
 // input/output/task_config) vary by provider, so they're passed through as
@@ -25,7 +31,7 @@ const taskSchema = z
     tools_config: z
       .object({
         llm_agent: z.record(z.any()),
-        synthesizer: z.record(z.any()),
+        synthesizer: z.record(z.any()).describe(VOICE_GUIDANCE),
         transcriber: z.record(z.any()),
         input: z.record(z.any()),
         output: z.record(z.any()),
@@ -63,7 +69,8 @@ const patchAgentConfigSchema = z
     synthesizer: z
       .object({ provider: z.string(), provider_config: z.record(z.any()) })
       .passthrough()
-      .optional(),
+      .optional()
+      .describe(VOICE_GUIDANCE),
     ingest_source_config: z.record(z.any()).optional(),
     telephony_provider: z
       .enum(["twilio", "plivo", "exotel", "vobiz", "sip-trunk", "trunk", "default"])
