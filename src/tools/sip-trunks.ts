@@ -6,7 +6,7 @@ import { getApiKey } from "../lib/auth";
 import { apiKeyOverrideSchema, trunkIdSchema } from "./schemas";
 
 const jsonResult = (data: unknown) => ({
-  content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }],
+  content: [{ type: "text" as const, text: JSON.stringify(data) }],
 });
 
 // Confirmed live 2026-08-05 against a real account: a number added via

@@ -63,8 +63,30 @@ interface Batch {
 }
 
 const jsonResult = (data: unknown) => ({
-  content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }],
+  content: [{ type: "text" as const, text: JSON.stringify(data) }],
 });
+
+// Pipeline internals GET /executions/{id} returns to admin keys. On a 30s+
+// call they run ~60KB (latency_dict alone ~26KB) against a ~2KB transcript,
+// and the model re-reads every byte on each later step of the turn.
+// get_execution_debug is the tool for latency and usage questions.
+const EXECUTION_INTERNALS = [
+  "latency_dict",
+  "meta_info",
+  "call_details",
+  "usage_breakdown",
+  "tool_call_logs",
+  "asr_endpoint",
+  "asr_routes",
+  "agent_extraction_usage",
+];
+
+function withoutInternals(execution: unknown): unknown {
+  if (!execution || typeof execution !== "object" || Array.isArray(execution)) return execution;
+  const slim = { ...(execution as Record<string, unknown>) };
+  for (const key of EXECUTION_INTERNALS) delete slim[key];
+  return slim;
+}
 
 export function registerReadTools(server: McpServer) {
   server.registerTool(
@@ -226,7 +248,7 @@ export function registerReadTools(server: McpServer) {
     {
       title: "Get call details",
       description:
-        "Retrieves full details of a single call execution by ID, including the conversation transcript, call status (lifecycle state), termination_reason (what happened to the call, also on transfer_call_data), duration, telephony data, and cost. Use list_agent_executions to find execution IDs.",
+        "Retrieves details of a single call execution by ID, including the conversation transcript, call status (lifecycle state), termination_reason (what happened to the call, also on transfer_call_data), duration, telephony data, and cost. Use list_agent_executions to find execution IDs. For latency, token usage or provider internals, use get_execution_debug.",
       inputSchema: {
         execution_id: executionIdSchema,
         api_key: apiKeyOverrideSchema(),
@@ -240,7 +262,7 @@ export function registerReadTools(server: McpServer) {
           `/executions/${encodeURIComponent(execution_id)}`,
           apiKey
         );
-        return jsonResult(execution);
+        return jsonResult(withoutInternals(execution));
       } catch (err) {
         return toErrorResult(err, { executionId: execution_id });
       }

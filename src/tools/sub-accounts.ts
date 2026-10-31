@@ -6,7 +6,7 @@ import { getApiKey } from "../lib/auth";
 import { apiKeyOverrideSchema, subAccountIdSchema } from "./schemas";
 
 const jsonResult = (data: unknown) => ({
-  content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }],
+  content: [{ type: "text" as const, text: JSON.stringify(data) }],
 });
 
 // A factory, not a shared instance: from/to on the same tool both use this,

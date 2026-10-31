@@ -6,7 +6,7 @@ import { getApiKey } from "../lib/auth";
 import { agentIdSchema, apiKeyOverrideSchema, e164Phone } from "./schemas";
 
 const jsonResult = (data: unknown) => ({
-  content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }],
+  content: [{ type: "text" as const, text: JSON.stringify(data) }],
 });
 
 // Faithful to POST /v2/agent's request body (see tools/index.ts comment
