@@ -234,7 +234,7 @@ immutable version before it can run.
 
 | Tool | Type | Description |
 |---|---|---|
-| `create_workflow` | Write | Create a new (empty) workflow. |
+| `create_workflow` | Write | Create a workflow; with `definition`, also save and validate its first draft in the same call. |
 | `list_workflows` | Read | List workflows, optionally filtered by name. Paginated. |
 | `get_workflow` | Read | A workflow's status, settings (webhook header values masked), and full draft/published version history. |
 | `rename_workflow` | Write, Destructive | Rename a workflow. |
@@ -242,12 +242,12 @@ immutable version before it can run.
 | `test_workflow_webhook` | Write | POST one sample execution webhook to the saved URL and report the receiver's response. |
 | `delete_workflow` | Write, Destructive | Permanently delete a workflow and every version. |
 | `get_workflow_draft` | Read | The current editable draft definition and its revision number. |
-| `save_workflow_draft` | Write, Destructive | Overwrite the draft's node graph. Requires the current revision to avoid clobbering concurrent edits. |
+| `save_workflow_draft` | Write, Destructive | Overwrite the draft's node graph and return its validation issues. Requires the current revision to avoid clobbering concurrent edits. |
 | `validate_workflow` | Read | Check the saved draft for errors before publishing. |
 | `publish_workflow` | Write, Destructive | Freeze the draft as a new immutable published version. |
 | `get_workflow_version` | Read | Retrieve a specific published version's node graph. |
 | `run_workflow` | Write, Destructive | Run a single contact through the latest published version. Places real calls/messages. |
-| `list_workflow_node_types` | Read | Every node type the engine supports, with its config parameters. |
+| `list_workflow_node_types` | Read | Every node type the engine supports, with its config parameters, plus a definition guide (graph grammar and a worked example). |
 | `get_workflow_callback` | Read | A callback node's URL and signing secret, optionally with the last payload it received. |
 
 ### Workflow campaigns

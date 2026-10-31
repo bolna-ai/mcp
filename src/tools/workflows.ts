@@ -24,6 +24,74 @@ const workflowDefinitionSchema = z
   })
   .passthrough();
 
+// Fallback for a workflow-service whose node-type catalog has no definition_guide yet.
+// Without one, models guessed the graph shape and spent many save/validate rounds fixing it.
+// A stale line here costs one extra validation round, never a bad publish.
+const WORKFLOW_DEFINITION_GUIDE = {
+  envelope:
+    '{"entry_node_id": "<start node id>", "on_no_match": "<fallback node id, required: where any node with no matching case goes, usually a failure end node>", "nodes": [...]}. Max 200 nodes.',
+  node:
+    '{"id": "^[a-z0-9_]{1,64}$", "type": "<node type>", "name": "<optional label>", "config": {...}, then its exit: "to": "<node id>" for time nodes only; "cases": [...] plus optional "on_no_match": "<node id>" for every other node type, start included (start needs at least one case, e.g. {"always": true}); nothing for end nodes}.',
+  case: '{"when": <condition>, "then": {"to": "<node id>", "effects": [{"set_value": {"state.<key>": <operand>}}]}}. Cases are checked in order and the first match wins; effects are optional. At most 25 cases per node.',
+  condition:
+    '{"always": true} | {"cmp": "==|!=|>|>=|<|<=|in|contains", "left": <operand>, "right": <operand>} | {"exists": {"var": "..."}} | {"all": [<condition>, ...]} | {"any": [<condition>, ...]} | {"not": <condition>}.',
+  operand:
+    '{"var": "<namespace>.<name>"} for a variable (e.g. call.status, entry.<start field>, extraction.<field>, state.<key>) or {"const": <value>} for a literal.',
+  agent_outcomes:
+    'An agent node branches on call.status. Route "completed" onward and send the rest (e.g. no-answer, busy, failed) to a retry node or an end node.',
+  retry:
+    'A retry node loops back to an earlier node: config {"target_node_id": "<agent node id>", "attempts": [{"delay": {"days": 0, "hours": 1, "minutes": 0}}, ...]} (1-10 attempts). Its own cases run once the attempts are used up, e.g. {"always": true} to a failure end node. Only a retry node may close a cycle.',
+  time: 'A time node waits: config {"delay": {"days", "hours", "minutes"}} or {"at": "<ISO time with offset>"}, then "to" the next node.',
+  end: 'An end node needs config {"label": "<short reason>", "outcome": "success|failure|neutral"}.',
+  example: {
+    entry_node_id: "n_start",
+    on_no_match: "n_end_fail",
+    nodes: [
+      {
+        id: "n_start",
+        type: "start",
+        config: { trigger: { kind: "manual" } },
+        cases: [{ when: { always: true }, then: { to: "n_call" } }],
+      },
+      {
+        id: "n_call",
+        type: "agent",
+        config: { agent_id: "<agent id from list_agents>" },
+        cases: [
+          {
+            when: { cmp: "==", left: { var: "call.status" }, right: { const: "completed" } },
+            then: { to: "n_end_ok" },
+          },
+          { when: { always: true }, then: { to: "n_retry" } },
+        ],
+      },
+      {
+        id: "n_retry",
+        type: "retry",
+        config: { target_node_id: "n_call", attempts: [{ delay: { hours: 1 } }, { delay: { hours: 1 } }] },
+        cases: [{ when: { always: true }, then: { to: "n_end_fail" } }],
+      },
+      { id: "n_end_ok", type: "end", config: { label: "completed", outcome: "success" } },
+      { id: "n_end_fail", type: "end", config: { label: "unreachable", outcome: "failure" } },
+    ],
+  },
+};
+
+// The draft endpoint stores any JSON object without checking it; only /validate parses it.
+// Validating as part of each save returns the issues in the same tool call instead of
+// costing the model a separate validate_workflow round after every save.
+async function validateDraft(workflowId: string, apiKey: string | undefined): Promise<unknown> {
+  try {
+    const result = (await bolnaFetch(`/workflows/${encodeURIComponent(workflowId)}/validate`, apiKey, {
+      method: "POST",
+      body: {},
+    })) as { issues?: unknown } | null;
+    return result?.issues ?? [];
+  } catch (err) {
+    return { validation_unavailable: err instanceof Error ? err.message : String(err) };
+  }
+}
+
 // Passthrough so an unknown key reaches the engine's 422 instead of being silently stripped.
 const workflowSettingsPatchSchema = z
   .object({
@@ -56,20 +124,45 @@ export function registerWorkflowsTools(server: McpServer) {
     {
       title: "Create workflow",
       description:
-        "Creates a new (empty, unpublished) workflow. Returns its ID. Use save_workflow_draft to add the node graph, then validate_workflow and publish_workflow before running it.",
+        "Creates a new unpublished workflow. To build one, pass the complete node graph as `definition`: this one call creates the workflow and saves and validates its draft, and returns the workflow, the draft `revision` and the validation `issues`. If `issues` has errors, fix them all in one save_workflow_draft call; if it has none, call publish_workflow. Call list_workflow_node_types first: its `definition_guide` has the graph grammar and a worked example. Leave out `definition` to create an empty workflow.",
       inputSchema: {
         name: z.string().min(1).max(120, "name must be 120 characters or fewer"),
+        definition: workflowDefinitionSchema
+          .optional()
+          .describe("The full node graph to save as the first draft. See definition_guide in list_workflow_node_types."),
         api_key: apiKeyOverrideSchema(),
       },
       annotations: { title: "Create workflow", readOnlyHint: false, destructiveHint: false },
     },
-    async ({ name, api_key }, extra) => {
+    async ({ name, definition, api_key }, extra) => {
       const apiKey = getApiKey(extra as any, api_key);
+      let workflow: { id?: string } | null;
       try {
-        const result = await bolnaFetch("/workflows", apiKey, { method: "POST", body: { name } });
-        return jsonResult(result);
+        workflow = (await bolnaFetch("/workflows", apiKey, { method: "POST", body: { name } })) as { id?: string } | null;
       } catch (err) {
         return toErrorResult(err);
+      }
+      if (!definition || !workflow?.id) return jsonResult(workflow);
+      try {
+        // A new workflow's draft starts at revision 0.
+        const draft = await bolnaFetch(`/workflows/${encodeURIComponent(workflow.id)}/draft`, apiKey, {
+          method: "PUT",
+          body: { expected_revision: 0, definition },
+        });
+        return jsonResult({ workflow, ...(draft as object), issues: await validateDraft(workflow.id, apiKey) });
+      } catch (err) {
+        // The workflow exists even though its draft didn't save; saying so keeps the model
+        // from creating a duplicate when it retries.
+        const text = toErrorResult(err).content[0]?.text ?? "";
+        return {
+          content: [
+            {
+              type: "text" as const,
+              text: `Workflow ${workflow.id} was created but its draft was not saved. Retry with save_workflow_draft (expected_revision 0) instead of creating it again. ${text}`,
+            },
+          ],
+          isError: true as const,
+        };
       }
     }
   );
@@ -240,7 +333,7 @@ export function registerWorkflowsTools(server: McpServer) {
     {
       title: "Save workflow draft",
       description:
-        "Overwrites a workflow's draft node graph. expected_revision must match the draft's current revision (from get_workflow_draft or the previous save) or the call fails with a 409 revision conflict — call get_workflow_draft first if unsure. Use list_workflow_node_types to see available node types and their config fields. A callback node pauses the execution until your system POSTs to its URL; it must route callback.status == \"timeout\" with a case or its own on_no_match, and `status` is reserved as a payload_map name.",
+        "Overwrites a workflow's draft node graph, then validates it, and returns the new `revision` plus the validation `issues`, so there's no need to call validate_workflow afterwards. When issues has errors, fix every one of them in the next save rather than one at a time. expected_revision must match the draft's current revision (from get_workflow_draft or the previous save) or the call fails with a 409 revision conflict — call get_workflow_draft first if unsure. To build a new workflow, pass the graph to create_workflow instead. Use list_workflow_node_types to see available node types, their config fields and the definition_guide grammar. A callback node pauses the execution until your system POSTs to its URL; it must route callback.status == \"timeout\" with a case or its own on_no_match, and `status` is reserved as a payload_map name.",
       inputSchema: {
         workflow_id: workflowIdSchema,
         expected_revision: z.number().int().min(0),
@@ -256,7 +349,7 @@ export function registerWorkflowsTools(server: McpServer) {
           method: "PUT",
           body: { expected_revision, definition },
         });
-        return jsonResult(result);
+        return jsonResult({ ...(result as object), issues: await validateDraft(workflow_id, apiKey) });
       } catch (err) {
         return toErrorResult(err);
       }
@@ -367,7 +460,7 @@ export function registerWorkflowsTools(server: McpServer) {
     {
       title: "List workflow node types",
       description:
-        "Lists every node type the workflow engine supports (start, agent, extraction, api, callback, time, retry, aisensy_whatsapp, end), with each one's config parameters, bounds, and defaults. Use this before authoring a workflow definition for save_workflow_draft.",
+        "Lists every node type the workflow engine supports (start, agent, extraction, api, callback, time, retry, aisensy_whatsapp, end), with each one's config parameters, bounds, and defaults, plus a `definition_guide`: how nodes, cases, conditions and variables fit together, with a worked call-and-retry example. Call this once before authoring a definition for create_workflow or save_workflow_draft.",
       inputSchema: { api_key: apiKeyOverrideSchema() },
       annotations: { title: "List workflow node types", readOnlyHint: true, openWorldHint: true },
     },
@@ -375,7 +468,8 @@ export function registerWorkflowsTools(server: McpServer) {
       const apiKey = getApiKey(extra as any, api_key);
       try {
         const result = await bolnaFetch("/workflow-node-types", apiKey);
-        return jsonResult(result);
+        // workflow-service serves its own tested guide; this copy only covers deployments that predate it.
+        return jsonResult({ definition_guide: WORKFLOW_DEFINITION_GUIDE, ...(result as object) });
       } catch (err) {
         return toErrorResult(err);
       }
