@@ -6,7 +6,7 @@ import { getApiKey } from "../lib/auth";
 import { agentIdSchema, apiKeyOverrideSchema, batchIdSchema, e164Phone } from "./schemas";
 
 const jsonResult = (data: unknown) => ({
-  content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }],
+  content: [{ type: "text" as const, text: JSON.stringify(data) }],
 });
 
 // POST /batches takes multipart/form-data with a CSV file (confirmed live

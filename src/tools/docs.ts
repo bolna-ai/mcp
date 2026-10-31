@@ -100,7 +100,7 @@ function resolveDocUrl(input: string): string {
 }
 
 const jsonResult = (data: unknown) => ({
-  content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }],
+  content: [{ type: "text" as const, text: JSON.stringify(data) }],
 });
 
 const textResult = (text: string) => ({

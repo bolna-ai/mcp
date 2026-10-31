@@ -6,7 +6,7 @@ import { getApiKey } from "../lib/auth";
 import { apiKeyOverrideSchema, workflowContactSchema, workflowIdSchema } from "./schemas";
 
 const jsonResult = (data: unknown) => ({
-  content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }],
+  content: [{ type: "text" as const, text: JSON.stringify(data) }],
 });
 
 // A node graph (nodes/cases/entry_node_id) with 9+ node types (start, agent,

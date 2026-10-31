@@ -11,7 +11,7 @@ import {
 } from "./schemas";
 
 const jsonResult = (data: unknown) => ({
-  content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }],
+  content: [{ type: "text" as const, text: JSON.stringify(data) }],
 });
 
 // Bolna's campaign action endpoints use a Google-style ":verb" suffix on the
