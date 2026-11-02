@@ -296,7 +296,7 @@ export function registerDispositionsTools(server: McpServer) {
     {
       title: "Test dispositions against a transcript",
       description:
-        "Runs every disposition linked to an agent against a supplied transcript, without a real call. Use this to preview extraction results before deploying disposition changes.",
+        "Runs every disposition linked to an agent against a supplied transcript, without a real call. Use this to preview extraction results before deploying disposition changes. Follow-up categories run only when their parent's answer matches; start rules always pass here. Each question's result has status (completed | skipped); a skipped one has status_reason parent_mismatch or parent_missing.",
       inputSchema: {
         agent_id: agentIdSchema,
         transcript: z.string().min(1).max(50000, "transcript must be 50000 characters or fewer"),
