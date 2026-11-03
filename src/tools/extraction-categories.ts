@@ -21,14 +21,15 @@ function ruleFieldsSchema() {
       .number()
       .int()
       .min(1)
+      .max(86400)
       .nullable()
       .optional()
-      .describe("Start rule: run only on calls at least this many seconds long. Starting categories only."),
+      .describe("Start rule: run only on calls at least this many seconds long (1 to 86400). Starting categories only."),
     skip_voicemail: z
       .boolean()
       .nullable()
       .optional()
-      .describe("Start rule: true skips calls that the agent's voicemail detection ended (a carrier's answering-machine detection doesn't count). Starting categories only."),
+      .describe("Start rule: true skips calls that ended on voicemail, whether the agent's voicemail detection or the carrier's answering-machine detection caught it. Starting categories only."),
     parent_disposition_id: z
       .string()
       .uuid()
@@ -50,7 +51,7 @@ function ruleFieldsSchema() {
       .nullable()
       .optional()
       .describe(
-        "Follow-up: exact answer values from the parent disposition's objective_options, sub_options values included."
+        "Follow-up: exact answer values from the parent disposition's objective_options, sub_options values included. A listed answer also covers its sub_options, so listing Not_Interested matches an answer of any reason under it."
       ),
   };
 }
