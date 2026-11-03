@@ -223,7 +223,7 @@ export function registerDispositionsTools(server: McpServer) {
     {
       title: "Update disposition",
       description:
-        "Partially updates a disposition. If agent_id is provided and the disposition is shared across agents, this forks a private copy scoped to that agent instead of editing the shared original (Bolna's copy-on-write behavior) — the response indicates whether it updated in place or created a copy. Pass category_id (preferred over category name) to move the disposition into another of the agent's extraction categories; responses include category_id alongside the category name.",
+        "Partially updates a disposition. If agent_id is provided and the disposition is shared across agents, this forks a private copy scoped to that agent instead of editing the shared original (Bolna's copy-on-write behavior) — the response indicates whether it updated in place or created a copy. Pass category_id (preferred over category name) to move the disposition into another of the agent's extraction categories; responses include category_id alongside the category name. An edit that a follow-up category depends on (making it free text, dropping an answer the follow-up lists, moving it into a loop) is refused with HTTP 400 and a message naming the follow-up.",
       inputSchema: {
         disposition_id: dispositionIdSchema,
         agent_id: agentIdSchema.optional(),
@@ -269,7 +269,7 @@ export function registerDispositionsTools(server: McpServer) {
     {
       title: "Delete disposition",
       description:
-        "Permanently deletes a disposition. Only the disposition's owner (or an account admin) can delete it. Past call results that already used it are unaffected; only future calls stop evaluating it.",
+        "Permanently deletes a disposition. Only the disposition's owner (or an account admin) can delete it. Past call results that already used it are unaffected; only future calls stop evaluating it. Refused with HTTP 400 when a follow-up category runs after its answers.",
       inputSchema: {
         disposition_id: dispositionIdSchema,
         api_key: apiKeyOverrideSchema(),
@@ -296,7 +296,7 @@ export function registerDispositionsTools(server: McpServer) {
     {
       title: "Test dispositions against a transcript",
       description:
-        "Runs every disposition linked to an agent against a supplied transcript, without a real call. Use this to preview extraction results before deploying disposition changes. Follow-up categories run only when their parent's answer matches; start rules always pass here. Each question's result has status (completed | skipped); a skipped one has status_reason parent_mismatch or parent_missing.",
+        "Runs every disposition linked to an agent against a supplied transcript, without a real call. Use this to preview extraction results before deploying disposition changes. Follow-up categories run only when their parent's answer matches; start rules always pass here. Each question's result has status (completed | skipped); a skipped one has status_reason parent_mismatch or parent_missing. A category whose LLM call failed comes back as {}.",
       inputSchema: {
         agent_id: agentIdSchema,
         transcript: z.string().min(1).max(50000, "transcript must be 50000 characters or fewer"),

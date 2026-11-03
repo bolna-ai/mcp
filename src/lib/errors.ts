@@ -50,6 +50,10 @@ function extractMessage(body: unknown): string {
     if (typeof record.message === "string" && record.message.length > 0) {
       return record.message;
     }
+    // Extraction routes return pydantic errors as {"message": [{"loc", "msg", "type"}]}.
+    if (Array.isArray(record.message) && record.message.length > 0) {
+      return record.message.map(validationIssue).join("; ");
+    }
     // Auth-related errors (e.g. invalid API key) come back as {"detail": "..."}
     // rather than {"message": "..."} — confirmed against the live API.
     if (typeof record.detail === "string" && record.detail.length > 0) {

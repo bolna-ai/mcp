@@ -94,7 +94,7 @@ export function registerExtractionCategoriesTools(server: McpServer) {
     {
       title: "Create extraction category",
       description:
-        "Creates an extraction category on an agent. A category is the set of dispositions evaluated together in one LLM pass per call; model (e.g. gpt-4.1-mini) runs that pass and is validated server-side against the allowed extraction models. name must be unique among the agent's categories. Put dispositions in it by passing its id as category_id to create_disposition / update_disposition. A category is either a starting category, optionally with a start rule (min_duration_s, skip_voicemail; every condition set must pass, none set runs it on every call), or a follow-up that runs only after a Pre-defined question in another category (parent_disposition_id + match_mode + match_values together), never both. A follow-up never runs if its parent's category was skipped or failed. A rule that would break the agent's chain (answer values the parent doesn't offer, a loop, start conditions on a follow-up) is refused with HTTP 400 and a message saying why.",
+        "Creates an extraction category on an agent. A category is the set of dispositions evaluated together in one LLM pass per call; model (e.g. gpt-4.1-mini) runs that pass and is validated server-side against the allowed extraction models. name must be unique among the agent's categories. Put dispositions in it by passing its id as category_id to create_disposition / update_disposition. A category is either a starting category, optionally with a start rule (min_duration_s, skip_voicemail; every condition set must pass, none set runs it on every call), or a follow-up that runs only after a Pre-defined question in another category (parent_disposition_id + match_mode + match_values together), never both. A follow-up never runs if its parent's category was skipped or failed or gave the question no answer. A rule that would break the agent's chain (answer values the parent doesn't offer, a loop, start conditions on a follow-up) is refused with HTTP 400 and a message saying why.",
       inputSchema: {
         agent_id: agentIdSchema,
         name: z.string().min(1, "name is required"),
@@ -166,7 +166,7 @@ export function registerExtractionCategoriesTools(server: McpServer) {
     {
       title: "Delete extraction category",
       description:
-        "Permanently deletes an extraction category AND every disposition inside it (the category owns its dispositions), detaching it from the agent. Past call results are unaffected; future calls stop evaluating those dispositions. To keep a disposition, first move it to another category via update_disposition with a new category_id.",
+        "Permanently deletes an extraction category AND every disposition inside it (the category owns its dispositions), detaching it from the agent. Past call results are unaffected; future calls stop evaluating those dispositions. To keep a disposition, first move it to another category via update_disposition with a new category_id. Refused with HTTP 400 when a follow-up category runs after one of its questions; change that follow-up first.",
       inputSchema: {
         category_id: categoryIdSchema,
         api_key: apiKeyOverrideSchema(),

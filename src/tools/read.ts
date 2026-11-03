@@ -248,7 +248,7 @@ export function registerReadTools(server: McpServer) {
     {
       title: "Get call details",
       description:
-        "Retrieves details of a single call execution by ID, including the conversation transcript, call status (lifecycle state), termination_reason (what happened to the call, also on transfer_call_data), duration, telephony data, cost, and extracted_data (each question's result carries status completed | skipped and status_reason no_user_turn | start_rule | parent_mismatch | parent_missing; calls stored before this have no status and count as completed). Use list_agent_executions to find execution IDs. For latency, token usage or provider internals, use get_execution_debug.",
+        "Retrieves details of a single call execution by ID, including the conversation transcript, call status (lifecycle state), termination_reason (what happened to the call, also on transfer_call_data), duration, telephony data, cost, and extracted_data (each question's result carries status completed | skipped and status_reason no_user_turn | start_rule | parent_mismatch | parent_missing; results stored before result status existed have no status and count as completed; a category whose LLM call failed is {}). Use list_agent_executions to find execution IDs. For latency, token usage or provider internals, use get_execution_debug.",
       inputSchema: {
         execution_id: executionIdSchema,
         api_key: apiKeyOverrideSchema(),
