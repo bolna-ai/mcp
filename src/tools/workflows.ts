@@ -9,8 +9,62 @@ const jsonResult = (data: unknown) => ({
   content: [{ type: "text" as const, text: JSON.stringify(data) }],
 });
 
-// A node graph (nodes/cases/entry_node_id) with 9+ node types (start, agent,
-// extraction, api, callback, time, retry, aisensy_whatsapp, end), each with
+// Stringified into the definition parameter's description, where a tool description's
+// 4,096-char client cap does not apply. Publishes clean once <agent_id> is a real agent.
+const WORKFLOW_EXAMPLE = {
+  entry_node_id: "n_start",
+  on_no_match: "n_gave_up",
+  defaults: { timezone: "Asia/Kolkata" },
+  memory: {
+    attempts: { type: "number", initial: 0, description: "Calls placed so far" },
+    promised_date: { type: "timestamp", description: "Latest date the customer promised to pay" },
+  },
+  nodes: [
+    { id: "n_start", type: "start", config: { trigger: { kind: "manual" } }, cases: [{ when: { always: true }, then: { to: "n_count" } }] },
+    { id: "n_count", type: "memory", config: { set: [{ name: "attempts", op: "add", value: { const: 1 } }] }, to: "n_call" },
+    {
+      id: "n_call",
+      type: "agent",
+      config: { agent_id: "<agent_id>" },
+      cases: [
+        { when: { cmp: "==", left: { var: "call.status" }, right: { const: "completed" } }, then: { to: "n_ext" } },
+        { when: { always: true }, then: { to: "n_retry" } },
+      ],
+    },
+    {
+      id: "n_ext",
+      type: "extraction",
+      config: { agent_node_id: "n_call", selected: ["ptp_date"] },
+      cases: [{ when: { always: true }, then: { to: "n_remember" } }],
+    },
+    {
+      id: "n_remember",
+      type: "memory",
+      config: { set: [{ name: "promised_date", op: "max", value: { var: "node.n_ext.extraction.ptp_date" } }] },
+      to: "n_wait",
+    },
+    {
+      id: "n_wait",
+      type: "time",
+      config: { at: { time: { from: { var: "memory.promised_date" }, at: "10:00" } } },
+      cases: [
+        { when: { cmp: "==", left: { var: "time.result" }, right: { const: "missing" } }, then: { to: "n_retry" } },
+        { when: { always: true }, then: { to: "n_due" } },
+      ],
+    },
+    {
+      id: "n_retry",
+      type: "retry",
+      config: { attempts: [{ at: { time: { from: "today", offset: { days: 1 }, at: "10:00" } } }], target_node_id: "n_count" },
+      cases: [{ when: { always: true }, then: { to: "n_gave_up" } }],
+    },
+    { id: "n_due", type: "end", config: { label: "promise_due", outcome: "success" } },
+    { id: "n_gave_up", type: "end", config: { label: "no_promise", outcome: "failure" } },
+  ],
+};
+
+// A node graph (nodes/cases/entry_node_id) with 10 node types (start, agent,
+// extraction, api, callback, time, memory, retry, aisensy_whatsapp, end), each with
 // its own config shape and branching logic (cases[].when supports "always"
 // or a cmp/left/right comparison against var/const operands). Faithfully
 // modeling every node type here would be as brittle as it is verbose, so
@@ -22,7 +76,11 @@ const workflowDefinitionSchema = z
     on_no_match: z.string().optional(),
     nodes: z.array(z.record(z.any())),
   })
-  .passthrough();
+  .passthrough()
+  .describe(
+    "The whole definition: entry_node_id, on_no_match (where a node goes when none of its cases match and it has no on_no_match of its own), nodes, and the optional top-level memory and defaults. Example: a collections journey that counts call attempts, keeps the later of the promised payment dates, waits until 10:00 on that date, and calls again tomorrow at 10:00 when there is no date. Replace <agent_id> (from list_agents) and ptp_date (one of that agent's extraction fields, from list_dispositions): " +
+      JSON.stringify(WORKFLOW_EXAMPLE)
+  );
 
 // Passthrough so an unknown key reaches the engine's 422 instead of being silently stripped.
 const workflowSettingsPatchSchema = z
@@ -149,7 +207,7 @@ export function registerWorkflowsTools(server: McpServer) {
     {
       title: "Update workflow settings",
       description:
-        "Changes a workflow's live settings. A change takes effect at once, including for executions already running, and is not tied to a published version. settings is an RFC 7396 JSON merge patch: omitted keys stay as they are and null removes a key. The only section is webhook, the execution webhook: one POST per contact execution when it finishes, with event \"execution.terminal\", execution_id, workflow_id, workflow_version, campaign_id, reference_id, status (completed | failed | cancelled | aborted), termination_reason (the end node's label, or internal_error | required_variable_missing | cancelled | campaign_aborted | zombie | terminated), outcome, occurred_at, and trail (every node attempt in order). Setting webhook.url turns it on; {\"webhook\": null} turns it off. Header values are write-only: the response and get_workflow show each as \"**********\". Omit a header to keep its value, since sending the mask back is rejected; a url on a different host or port drops every stored header instead. Call test_workflow_webhook afterwards to check the receiver.",
+        "Changes a workflow's live settings. A change takes effect at once, including for executions already running, and is not tied to a published version. settings is an RFC 7396 JSON merge patch: omitted keys stay as they are and null removes a key. The only section is webhook, the execution webhook: one POST per contact execution when it finishes, with event \"execution.terminal\", execution_id, workflow_id, workflow_version, campaign_id, reference_id, status (completed | failed | cancelled | aborted), termination_reason (the end node's label, or internal_error | required_variable_missing | cancelled | campaign_aborted | zombie | terminated), outcome, occurred_at, trail (every node attempt in order), and memory (the final value of each declared memory variable, null when empty). Setting webhook.url turns it on; {\"webhook\": null} turns it off. Header values are write-only: the response and get_workflow show each as \"**********\". Omit a header to keep its value, since sending the mask back is rejected; a url on a different host or port drops every stored header instead. Call test_workflow_webhook afterwards to check the receiver.",
       inputSchema: {
         workflow_id: workflowIdSchema,
         settings: workflowSettingsPatchSchema,
@@ -240,7 +298,15 @@ export function registerWorkflowsTools(server: McpServer) {
     {
       title: "Save workflow draft",
       description:
-        "Overwrites a workflow's draft node graph. expected_revision must match the draft's current revision (from get_workflow_draft or the previous save) or the call fails with a 409 revision conflict — call get_workflow_draft first if unsure. Use list_workflow_node_types to see available node types and their config fields. A callback node pauses the execution until your system POSTs to its URL; it must route callback.status == \"timeout\" with a case or its own on_no_match, and `status` is reserved as a payload_map name. A case's then can carry effects. An earlier node's outputs stay readable for the whole execution at node.<node_id>.* (e.g. node.<extraction_node_id>.extraction.<field>), so read those directly; effects are for what node.* cannot hold: a counter, a flag, or a value whose producing node depends on the path taken.The dashboard editor cannot write effects, so author them here: {\"set_value\": {\"state.<name>\": <operand>}}, or {\"state.<name>\": {\"value\": <operand>, \"type\": \"number\"}} to coerce first (string, number, boolean, timestamp, phone, email, url, json, timezone). An operand is {\"var\": \"<namespace>.<path>\"}, {\"const\": ...} or {\"op\": \"+\" | \"-\" | \"*\" | \"/\", \"args\": [...]}. state.* survives every later call, retry and wait and is never reset; read it back as {\"var\": \"state.<name>\"} in conditions, config.variables, recipient, and a time or retry node's at. Targets are a single segment. Only the matched case's effects run, and on_no_match runs none. A case holds up to 10 effects, run in list order, but the assignments inside one set_value are unordered. A value that does not resolve is skipped with a timeline warning, so set a counter's starting value on a start-node case before incrementing it, and type numeric state as number. For time, system.* carries the same variables an agent prompt gets, read when the node is evaluated: current_hour, current_minute, current_day, current_month, current_year (ints), current_weekday (lowercase), current_date and current_time (display strings, not for comparisons) and timezone, plus current_timestamp (now) and current_day_start (local midnight), both Unix seconds. Local time is in each contact's own zone: declare one start field with type \"timezone\" (any name; its values must be exact, case-sensitive IANA names such as \"Asia/Kolkata\", or the upload row fails with invalid_field_type), falling back to definition.defaults.timezone for a blank value. Reading any local-time variable requires defaults.timezone or that field marked required. After 7 PM is system.current_hour >= 19; to wait until a computed time (10 AM tomorrow: system.current_day_start + 122400), set_value it typed timestamp into state.* and use that as a time node's at (an untyped number cannot be waited on, so the node moves on at once; publish warns numeric_at). Full reference: search_docs \"workflow conditions and variables\".",
+        "Overwrites a workflow's draft node graph. expected_revision must match the draft's current revision (from get_workflow_draft or the previous save) or the call fails with a 409 revision conflict — call get_workflow_draft first if unsure. " +
+        "A callback node pauses the execution until your system POSTs to its URL; it must route callback.status == \"timeout\" with a case or its own on_no_match, and `status` is reserved as a payload_map name. " +
+        "Read list_workflow_node_types first: it describes every node type's config, the memory section (declaration schema, name pattern, limits, which op works on which type) and the formats. The definition parameter carries a complete example. " +
+        "Publish rules: declare every memory variable in the definition's top-level memory block, {\"<name>\": {\"type\": \"number\", \"initial\": 0}}, before a memory node writes it or anything reads memory.<name>. Memory and time nodes may use \"to\" instead of \"cases\" (not both). Non-zero offset hours or minutes cannot be combined with a time value's at. A time node with cases must route every time.result (waited, passed, missing), e.g. by ending on an always case. A start field with type \"timezone\" gives each contact's own zone (exact, case-sensitive IANA names such as \"Asia/Kolkata\", or the upload row fails with invalid_field_type); a blank value falls back to definition.defaults.timezone, and a workflow without defaults.timezone runs in Asia/Kolkata. validate_workflow's issue messages carry the exact JSON fix: an undeclared memory write's message holds the declaration to add, an undeclared memory read names the nearest declared name. " +
+        "An operand is {\"var\": \"<namespace>.<path>\"}, {\"const\": ...}, {\"op\": \"+\" | \"-\" | \"*\" | \"/\", \"args\": [...]} or a time value. Earlier nodes' outputs stay readable all execution at node.<node_id>.* (e.g. node.<extraction_node_id>.extraction.<field>), so read what a call said there directly. " +
+        "Memory is for a value that changes or has several writers: a counter, a flag, the latest of several dates, a computed value. A memory node writes it (config.set rows {\"name\", \"op\", \"value\"}, run top to bottom; a memory node's cases see its writes) and {\"var\": \"memory.<name>\"} reads it anywhere. A value that does not resolve, is null or does not convert to the declared type is refused and the old value kept, with a timeline warning; op clear empties it. Memory starts from the initial values and lasts the contact's whole journey; its final values arrive as memory in the execution webhook and get_workflow_execution. " +
+        "A time value, {\"time\": {\"from\": \"now\" | \"today\" | <operand>, \"offset\": {\"days\": 1, \"hours\": 0, \"minutes\": 0}, \"at\": \"10:00\"}}, is a moment in the contact's timezone: days are calendar days, at sets the clock, hours and minutes are elapsed time. 10 AM tomorrow is {\"time\": {\"from\": \"today\", \"offset\": {\"days\": 1}, \"at\": \"10:00\"}}. Use it as a time node's or retry attempt's at, a memory value, or in a condition, where < <= > >= compare two timestamps as instants: {\"cmp\": \"<\", \"left\": {\"var\": \"memory.promised_date\"}, \"right\": {\"time\": {\"from\": \"now\"}}}. A time node's time.result is waited, passed (its at was already past, so it did not wait) or missing (its at did not resolve). " +
+        "In a template string (WhatsApp variables, api url, headers and body) a dotted timestamp ref takes a format, {memory.promised_date|date}, rendered in the contact's timezone; the names are the catalog's formats. Agent and api variables stay ISO, and a bare api input {name|date} is sent as written. " +
+        "system.* carries what an agent prompt gets, read when the node runs: current_hour, current_minute, current_day, current_month, current_year (ints), current_weekday (lowercase), current_date and current_time (display strings, not for comparisons), timezone, and current_timestamp and current_day_start (Unix seconds; to wait on or compare a time, use a time value). After 7 PM is system.current_hour >= 19. Full reference: search_docs \"workflow conditions and variables\".",
       inputSchema: {
         workflow_id: workflowIdSchema,
         expected_revision: z.number().int().min(0),
@@ -367,7 +433,7 @@ export function registerWorkflowsTools(server: McpServer) {
     {
       title: "List workflow node types",
       description:
-        "Lists every node type the workflow engine supports (start, agent, extraction, api, callback, time, retry, aisensy_whatsapp, end), with each one's config parameters, bounds, and defaults, plus the variable namespaces and the set_value effect (its shape is in the save_workflow_draft description). Use this before authoring a workflow definition for save_workflow_draft.",
+        "Lists every node type the workflow engine supports (start, agent, extraction, api, callback, time, memory, retry, aisensy_whatsapp, end), with each one's config parameters, bounds, defaults and what its cases branch on, plus the variable namespaces, the memory section (the declaration schema for the definition's top-level memory block, the name pattern, limits, and ops_by_type: which memory-node op works on which type) and formats (each timestamp format name with how it renders). Use this before authoring a workflow definition for save_workflow_draft.",
       inputSchema: { api_key: apiKeyOverrideSchema() },
       annotations: { title: "List workflow node types", readOnlyHint: true, openWorldHint: true },
     },
