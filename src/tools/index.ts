@@ -69,12 +69,14 @@ import { registerExtractionPrompts } from "./prompts";
 import { registerVoicePromptPrompt } from "./prompt-voice";
 import { registerGraphAgentPrompt } from "./prompt-graph-agent";
 import { registerDebugCallsPrompt } from "./prompt-debug-calls";
+import { registerMigrateCallPrompt } from "./prompt-migrate-call";
 
 export function registerAllTools(server: McpServer) {
   registerExtractionPrompts(server);
   registerVoicePromptPrompt(server);
   registerGraphAgentPrompt(server);
   registerDebugCallsPrompt(server);
+  registerMigrateCallPrompt(server);
   registerReadTools(server);
   registerWriteTools(server);
   registerDocsTools(server);

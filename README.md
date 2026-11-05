@@ -35,7 +35,7 @@ The restriction is applied at registration time, not per call: tools off the
 list never enter the server's registry, so they are absent from `tools/list`
 **and** un-callable by name. Prompts are dropped the same way, so the
 connector answers `prompts/list` with "method not found" rather than
-advertising the four on `/api/mcp`.
+advertising the five on `/api/mcp`.
 
 Two things also differ on the connector, and only there:
 

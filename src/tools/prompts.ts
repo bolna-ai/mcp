@@ -18,7 +18,7 @@ Dispositions are grouped into extraction categories — a category is the set of
 
 For the full worked methodology — archetypes, anti-patterns, condition-writing rules, and a brief-gathering flow for thin requests — invoke this server's \`design_extraction\` prompt.
 
-Three more invokable prompts cover the rest of Bolna Agent Skills' methodology: \`design_voice_prompt\` (the rigid section structure, Hindi-first/English-second scripted lines, and variable notation a GPT-4.1 mini voice-agent prompt needs — also fixes an existing prompt from a pasted transcript), \`design_graph_agent\` (node/edge schema, deterministic-first routing, expression operators, and event injection for a multi-step graph agent), and \`diagnose_call\` (symptom-to-fix map for latency, interruption, hangup, webhook, and SIP issues, backed by \`latency_data\`/raw logs).`;
+Four more invokable prompts cover the rest of Bolna Agent Skills' methodology: \`design_voice_prompt\` (the rigid section structure, Hindi-first/English-second scripted lines, and variable notation a GPT-4.1 mini voice-agent prompt needs — also fixes an existing prompt from a pasted transcript), \`design_graph_agent\` (node/edge schema, deterministic-first routing, expression operators, and event injection for a multi-step graph agent), \`diagnose_call\` (symptom-to-fix map for latency, interruption, hangup, webhook, and SIP issues, backed by \`latency_data\`/raw logs), and \`migrate_call_to_workflow\` (moves an existing /call integration onto a workflow: maps user_data, retries and agent choice onto nodes, tests on the user's own number, and rewrites the call site).`;
 
 /**
  * Instructions for the nine-tool directory surface at /api/connector/mcp.
