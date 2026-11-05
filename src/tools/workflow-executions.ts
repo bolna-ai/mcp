@@ -15,7 +15,7 @@ export function registerWorkflowExecutionsTools(server: McpServer) {
     {
       title: "Get workflow execution",
       description:
-        "Retrieves a single contact's progress through a workflow: current node, every node attempt in order, the most recent 100 timeline events, and outcome once terminal. Poll this to track a run_workflow call or an entry from list_workflow_campaign_executions.",
+        "Retrieves a single contact's progress through a workflow: current node, every node attempt in order, the most recent 100 timeline events, and outcome once terminal. memory (each declared memory variable's final value) is null until the execution finishes; while it runs, each memory node's attempt shows the values it wrote. Poll this to track a run_workflow call or an entry from list_workflow_campaign_executions.",
       inputSchema: { execution_id: workflowExecutionIdSchema, api_key: apiKeyOverrideSchema() },
       annotations: { title: "Get workflow execution", readOnlyHint: true, openWorldHint: true },
     },
