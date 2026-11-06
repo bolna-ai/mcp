@@ -4,6 +4,7 @@ import { bolnaFetch } from "../lib/bolna-client";
 import { toErrorResult } from "../lib/errors";
 import { getApiKey } from "../lib/auth";
 import { apiKeyOverrideSchema, workflowContactSchema, workflowIdSchema } from "./schemas";
+import { loadDraft, nextExpectedRevision, saveDraftAndValidate } from "../lib/workflow-draft";
 
 const jsonResult = (data: unknown) => ({
   content: [{ type: "text" as const, text: JSON.stringify(data) }],
@@ -220,15 +221,14 @@ export function registerWorkflowsTools(server: McpServer) {
     {
       title: "Get workflow draft",
       description:
-        "Retrieves a workflow's current editable draft definition (node graph) and its revision number, needed to save further edits without a conflict.",
+        "Retrieves a workflow's current editable draft definition (node graph) and its revision number, the expected_revision the next save_workflow_draft must send. Right after a publish there is no draft until the next save creates one from the latest published version, so this then returns that version's definition with revision 0, draft_exists false and based_on_version; saving with expected_revision 0 works. For small edits use patch_workflow_draft instead of resending the whole definition.",
       inputSchema: { workflow_id: workflowIdSchema, api_key: apiKeyOverrideSchema() },
       annotations: { title: "Get workflow draft", readOnlyHint: true, openWorldHint: true },
     },
     async ({ workflow_id, api_key }, extra) => {
       const apiKey = getApiKey(extra as any, api_key);
       try {
-        const result = await bolnaFetch(`/workflows/${encodeURIComponent(workflow_id)}/draft`, apiKey);
-        return jsonResult(result);
+        return jsonResult(await loadDraft(workflow_id, apiKey));
       } catch (err) {
         return toErrorResult(err);
       }
@@ -240,7 +240,7 @@ export function registerWorkflowsTools(server: McpServer) {
     {
       title: "Save workflow draft",
       description:
-        "Overwrites a workflow's draft node graph. expected_revision must match the draft's current revision (from get_workflow_draft or the previous save) or the call fails with a 409 revision conflict — call get_workflow_draft first if unsure. Use list_workflow_node_types to see available node types and their config fields. A callback node pauses the execution until your system POSTs to its URL; it must route callback.status == \"timeout\" with a case or its own on_no_match, and `status` is reserved as a payload_map name. A case's then can carry effects. An earlier node's outputs stay readable for the whole execution at node.<node_id>.* (e.g. node.<extraction_node_id>.extraction.<field>), so read those directly; effects are for what node.* cannot hold: a counter, a flag, or a value whose producing node depends on the path taken.The dashboard editor cannot write effects, so author them here: {\"set_value\": {\"state.<name>\": <operand>}}, or {\"state.<name>\": {\"value\": <operand>, \"type\": \"number\"}} to coerce first (string, number, boolean, timestamp, phone, email, url, json, timezone). An operand is {\"var\": \"<namespace>.<path>\"}, {\"const\": ...} or {\"op\": \"+\" | \"-\" | \"*\" | \"/\", \"args\": [...]}. state.* survives every later call, retry and wait and is never reset; read it back as {\"var\": \"state.<name>\"} in conditions, config.variables, recipient, and a time or retry node's at. Targets are a single segment. Only the matched case's effects run, and on_no_match runs none. A case holds up to 10 effects, run in list order, but the assignments inside one set_value are unordered. A value that does not resolve is skipped with a timeline warning, so set a counter's starting value on a start-node case before incrementing it, and type numeric state as number. For time, system.* carries the same variables an agent prompt gets, read when the node is evaluated: current_hour, current_minute, current_day, current_month, current_year (ints), current_weekday (lowercase), current_date and current_time (display strings, not for comparisons) and timezone, plus current_timestamp (now) and current_day_start (local midnight), both Unix seconds. Local time is in each contact's own zone: declare one start field with type \"timezone\" (any name; its values must be exact, case-sensitive IANA names such as \"Asia/Kolkata\", or the upload row fails with invalid_field_type), falling back to definition.defaults.timezone for a blank value. Reading any local-time variable requires defaults.timezone or that field marked required. After 7 PM is system.current_hour >= 19; to wait until a computed time (10 AM tomorrow: system.current_day_start + 122400), set_value it typed timestamp into state.* and use that as a time node's at (an untyped number cannot be waited on, so the node moves on at once; publish warns numeric_at). Full reference: search_docs \"workflow conditions and variables\".",
+        "Overwrites a workflow's draft node graph, then runs validate_workflow on it. Returns the new revision (send it as expected_revision next time) and the validate issues, so errors such as more than 250 start fields (size_cap) show at save rather than at publish; the draft is saved even when issues has errors. expected_revision must match the draft's current revision (from get_workflow_draft or the previous save; 0 right after a publish) or the call fails with a 409 revision conflict, so call get_workflow_draft first if unsure. To change a few nodes, cases or values, use patch_workflow_draft instead of resending everything. Use list_workflow_node_types to see available node types and their config fields. A callback node pauses the execution until your system POSTs to its URL; it must route callback.status == \"timeout\" with a case or its own on_no_match, and `status` is reserved as a payload_map name. A case's then can carry effects. An earlier node's outputs stay readable for the whole execution at node.<node_id>.* (e.g. node.<extraction_node_id>.extraction.<field>), so read those directly; effects are for what node.* cannot hold: a counter, a flag, or a value whose producing node depends on the path taken.The dashboard editor cannot write effects, so author them here: {\"set_value\": {\"state.<name>\": <operand>}}, or {\"state.<name>\": {\"value\": <operand>, \"type\": \"number\"}} to coerce first (string, number, boolean, timestamp, phone, email, url, json, timezone). An operand is {\"var\": \"<namespace>.<path>\"}, {\"const\": ...} or {\"op\": \"+\" | \"-\" | \"*\" | \"/\", \"args\": [...]}. state.* survives every later call, retry and wait and is never reset; read it back as {\"var\": \"state.<name>\"} in conditions, config.variables, recipient, and a time or retry node's at. Targets are a single segment. Only the matched case's effects run, and on_no_match runs none. A case's when sees state as it was before that case's own effects, so \"fewer than 3 calls after this one\" on a case that increments state.dials_today is written dials_today < 2. A case holds up to 10 effects, run in list order, but the assignments inside one set_value are unordered. A value that does not resolve is skipped with a timeline warning, so set a counter's starting value on a start-node case before incrementing it, and type numeric state as number. For time, system.* carries the same variables an agent prompt gets, read when the node is evaluated: current_hour, current_minute, current_day, current_month, current_year (ints), current_weekday (lowercase), current_date and current_time (display strings, not for comparisons) and timezone, plus current_timestamp (now) and current_day_start (local midnight), both Unix seconds. Local time is in each contact's own zone: declare one start field with type \"timezone\" (any name; its values must be exact, case-sensitive IANA names such as \"Asia/Kolkata\", or the upload row fails with invalid_field_type), falling back to definition.defaults.timezone for a blank value. Reading any local-time variable requires defaults.timezone or that field marked required. After 7 PM is system.current_hour >= 19; to wait until a computed time (10 AM tomorrow: system.current_day_start + 122400), set_value it typed timestamp into state.* and use that as a time node's at (an untyped number cannot be waited on, so the node moves on at once; publish warns numeric_at). A retry node's config is {target_node_id, attempts}: attempts is a list of 1-10 entries, one per retry in order, each exactly like a time node's config: {\"delay\": {\"days\", \"hours\", \"minutes\"}} or {\"at\": <ISO datetime with offset, or {\"var\": ...}>, \"timezone\": <IANA zone, only with a variable at, used to read a naive value>}; the target runs at most len(attempts) + 1 times. Full reference: search_docs \"workflow conditions and variables\".",
       inputSchema: {
         workflow_id: workflowIdSchema,
         expected_revision: z.number().int().min(0),
@@ -252,11 +252,7 @@ export function registerWorkflowsTools(server: McpServer) {
     async ({ workflow_id, expected_revision, definition, api_key }, extra) => {
       const apiKey = getApiKey(extra as any, api_key);
       try {
-        const result = await bolnaFetch(`/workflows/${encodeURIComponent(workflow_id)}/draft`, apiKey, {
-          method: "PUT",
-          body: { expected_revision, definition },
-        });
-        return jsonResult(result);
+        return jsonResult(await saveDraftAndValidate(workflow_id, apiKey, expected_revision, definition));
       } catch (err) {
         return toErrorResult(err);
       }
@@ -291,18 +287,25 @@ export function registerWorkflowsTools(server: McpServer) {
     {
       title: "Publish workflow",
       description:
-        "Freezes a workflow's current draft as a new immutable published version, which run_workflow and new campaigns then use. Fails if the draft has unresolved validation errors (run validate_workflow first) or is identical to the latest published version.",
+        "Freezes a workflow's current draft as a new immutable published version, which run_workflow and new campaigns then use. Fails if the draft has unresolved validation errors (run validate_workflow first) or is identical to the latest published version. Returns the version plus next_expected_revision, the revision the next save_workflow_draft must send (0: publishing consumes the draft, and the next save starts a new one from this version).",
       inputSchema: { workflow_id: workflowIdSchema, api_key: apiKeyOverrideSchema() },
       annotations: { title: "Publish workflow", readOnlyHint: false, destructiveHint: true },
     },
     async ({ workflow_id, api_key }, extra) => {
       const apiKey = getApiKey(extra as any, api_key);
       try {
-        const result = await bolnaFetch(`/workflows/${encodeURIComponent(workflow_id)}/publish`, apiKey, {
-          method: "POST",
-          body: {},
-        });
-        return jsonResult(result);
+        const result = await bolnaFetch<Record<string, unknown>>(
+          `/workflows/${encodeURIComponent(workflow_id)}/publish`,
+          apiKey,
+          { method: "POST", body: {} }
+        );
+        let next_expected_revision: number | null = null;
+        try {
+          next_expected_revision = await nextExpectedRevision(workflow_id, apiKey);
+        } catch {
+          // The publish already succeeded; get_workflow_draft can recover the revision.
+        }
+        return jsonResult({ ...result, next_expected_revision });
       } catch (err) {
         return toErrorResult(err);
       }
