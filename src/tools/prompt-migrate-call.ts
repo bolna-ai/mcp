@@ -12,7 +12,7 @@ const METHODOLOGY = `You are moving an existing Bolna /call integration onto a B
 
 If you can read the user's codebase, read every place that calls /call. Otherwise ask them to paste that code. Record: the \`agent_id\` values and how the code picks one, including a picking value that isn't in \`user_data\`; every \`user_data\` key; \`from_phone_number\` (constant, per call, or absent); \`scheduled_at\`; \`retry_config\` or re-dial logic in the code (statuses, intervals, number of calls); \`agent_data\` or \`bypass_call_guardrails\`; how results are read (agent webhook or polling \`GET /executions/{id}\`) and every \`recipient_data\` key that code reads; what the calling function returns or stores, and whether it blocks until the call ends. Confirm the real keys sent today with \`list_agent_executions\` and \`get_execution\` (\`context_details.recipient_data\`) on two or three recent calls; if the agent has no calls yet, the code is the source. Show the inventory as a table and confirm it before building.
 
-Stop and tell the user the flow can't move yet if it uses \`agent_data\` (voice_id / language override), \`bypass_call_guardrails\`, a different \`from_phone_number\` per call, or more than 50 \`user_data\` keys.
+Stop and tell the user the flow can't move yet if it uses \`agent_data\` (voice_id / language override), \`bypass_call_guardrails\`, a different \`from_phone_number\` per call, or more than 250 \`user_data\` keys (the start node's field cap).
 
 ## 2. Mapping
 
