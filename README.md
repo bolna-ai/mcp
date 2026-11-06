@@ -1,7 +1,7 @@
 # Bolna MCP Server
 
 Remote MCP server (Streamable HTTP) wrapping the [Bolna](https://bolna.ai) voice
-AI REST API (`https://api.bolna.ai`): 116 tools covering nearly every documented
+AI REST API (`https://api.bolna.ai`): 121 tools covering nearly every documented
 Bolna endpoint, TypeScript, deployed on Vercel via `mcp-handler`.
 
 **Live at [mcp.bolna.ai](https://mcp.bolna.ai)** — that page has the same
@@ -18,7 +18,7 @@ docs are documented in the comment block at the top of
 
 | Endpoint | Tools | For |
 |---|---|---|
-| `/api/mcp` | all 116 | Anyone connecting the server themselves |
+| `/api/mcp` | all 121 | Anyone connecting the server themselves |
 | `/api/connector/mcp` | 9 | The Claude connector directory listing |
 
 **The directory surface is a fixed subset.** A directory listing is reviewed
@@ -79,7 +79,7 @@ as `api_key`.
 
 ## Available tools
 
-116 tools across 17 categories. "Write" tools flagged **Destructive** modify,
+121 tools across 17 categories. "Write" tools flagged **Destructive** modify,
 remove, or spend money and typically prompt for confirmation in MCP clients
 that respect tool annotations.
 
@@ -241,10 +241,14 @@ immutable version before it can run.
 | `update_workflow_settings` | Write, Destructive | Set, change, or remove the execution webhook (URL and headers) as a JSON merge patch. Takes effect immediately. |
 | `test_workflow_webhook` | Write | POST one sample execution webhook to the saved URL and report the receiver's response. |
 | `delete_workflow` | Write, Destructive | Permanently delete a workflow and every version. |
-| `get_workflow_draft` | Read | The current editable draft definition and its revision number. |
-| `save_workflow_draft` | Write, Destructive | Overwrite the draft's node graph. Requires the current revision to avoid clobbering concurrent edits. |
+| `get_workflow_draft` | Read | The current editable draft definition and its revision number (right after a publish: the published definition at revision 0). |
+| `save_workflow_draft` | Write, Destructive | Overwrite the draft's node graph and validate it. Requires the current revision to avoid clobbering concurrent edits. |
+| `patch_workflow_draft` | Write, Destructive | Edit single nodes, cases or values in the draft without resending it. Handles the revision and runs validate. |
+| `rename_workflow_node` | Write, Destructive | Change a node's name and/or id, rewriting every reference to the id. |
+| `duplicate_workflow` | Write | Copy a workflow into a new unpublished workflow, e.g. a test twin. |
+| `list_agent_variables` | Read | An agent's prompt variables, and which ones a workflow's agent nodes leave unmapped. |
 | `validate_workflow` | Read | Check the saved draft for errors before publishing. |
-| `publish_workflow` | Write, Destructive | Freeze the draft as a new immutable published version. |
+| `publish_workflow` | Write, Destructive | Freeze the draft as a new immutable published version. Returns the revision the next save needs. |
 | `get_workflow_version` | Read | Retrieve a specific published version's node graph. |
 | `run_workflow` | Write, Destructive | Run a single contact through the latest published version. Places real calls/messages. |
 | `list_workflow_node_types` | Read | Every node type the engine supports, with its config parameters. |
@@ -276,7 +280,7 @@ A single contact's run through a workflow, created by `run_workflow` or a campai
 
 | Tool | Type | Description |
 |---|---|---|
-| `get_workflow_execution` | Read | Current node, node-by-node history, and recent timeline events. |
+| `get_workflow_execution` | Read | Current node, node-by-node history, and recent timeline events. A `summary` view drops per-node inputs. |
 | `cancel_workflow_execution` | Write, Destructive | Terminate a running execution. |
 | `resend_workflow_webhook` | Write | Queue a finished execution's original webhook payload again, to the workflow's current URL and headers. |
 
@@ -441,7 +445,7 @@ interpolation in headers yet, so the key goes in directly:
 
 Instead of the `mcp-remote` bridge above, you can install this as a proper
 [Desktop Extension](https://github.com/modelcontextprotocol/mcpb) (`.mcpb`) —
-a local, stdio-based build of the same 116 tools, packaged with a manifest so
+a local, stdio-based build of the same 121 tools, packaged with a manifest so
 Claude Desktop can install it with one click and prompt you for your API key
 itself (no config file editing).
 
