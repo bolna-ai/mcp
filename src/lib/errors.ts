@@ -21,6 +21,7 @@ export class BolnaApiError extends Error {
   bolnaMessage: string;
   retryAfter?: string;
   code?: string;
+  body: unknown;
 
   constructor(status: number, body: unknown, retryAfter?: string) {
     const bolnaMessage = extractMessage(body);
@@ -30,6 +31,7 @@ export class BolnaApiError extends Error {
     this.bolnaMessage = bolnaMessage;
     this.retryAfter = retryAfter;
     this.code = extractCode(body);
+    this.body = body;
   }
 }
 
