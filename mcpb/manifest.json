@@ -4,7 +4,7 @@
   "display_name": "Bolna Voice AI",
   "version": "0.1.0",
   "description": "Manage Bolna voice AI agents, calls, batches, phone numbers, SIP trunks, and more from Claude.",
-  "long_description": "Local MCP server wrapping the Bolna Voice AI REST API: 121 tools covering agents, call executions, batches, dispositions, extraction categories, phone numbers, inbound routing, SIP trunks, sub-accounts, TTS voices/providers, workflows, graph agents, and documentation search. Requires a Bolna API key from your Bolna dashboard.",
+  "long_description": "Local MCP server wrapping the Bolna Voice AI REST API: 122 tools covering agents, call executions, batches, dispositions, extraction categories, phone numbers, inbound routing, SIP trunks, sub-accounts, TTS voices/providers, workflows, graph agents, and documentation search. Requires a Bolna API key from your Bolna dashboard.",
   "author": {
     "name": "Bolna",
     "url": "https://github.com/bolna-ai"
@@ -154,6 +154,7 @@
     { "name": "abort_workflow_campaign", "description": "Permanently terminate a campaign. Cannot be undone." },
     { "name": "list_workflow_campaign_executions", "description": "List a campaign's per-contact executions. Paginated." },
     { "name": "get_workflow_campaign_report", "description": "Aggregated execution/termination/per-node funnel counts." },
+    { "name": "get_workflow_campaign_ab_tests", "description": "Per-version calls, completions and journey outcomes for each A/B-tested agent node." },
     { "name": "get_workflow_execution", "description": "Current node, node-by-node history, and recent timeline events. A summary view drops per-node inputs." },
     { "name": "cancel_workflow_execution", "description": "Terminate a running execution." },
     { "name": "resend_workflow_webhook", "description": "Queue a finished execution's original webhook payload again, to the workflow's current URL and headers." },

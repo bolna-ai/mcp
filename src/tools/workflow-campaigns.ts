@@ -356,7 +356,7 @@ export function registerWorkflowCampaignsTools(server: McpServer) {
     {
       title: "Get workflow campaign report",
       description:
-        "Retrieves an aggregated report for a campaign: execution counts by status, termination reasons, and a per-node funnel of attempt counts.",
+        "Retrieves an aggregated report for a campaign: execution counts by status, termination reasons, and a per-node funnel of attempt counts. For agent nodes with an A/B test, use get_workflow_campaign_ab_tests.",
       inputSchema: { campaign_id: workflowCampaignIdSchema, api_key: apiKeyOverrideSchema() },
       annotations: { title: "Get workflow campaign report", readOnlyHint: true, openWorldHint: true },
     },
@@ -365,6 +365,29 @@ export function registerWorkflowCampaignsTools(server: McpServer) {
       try {
         const result = await bolnaFetch(
           `/workflow-campaigns/${encodeURIComponent(campaign_id)}/report`,
+          apiKey
+        );
+        return jsonResult(result);
+      } catch (err) {
+        return toErrorResult(err);
+      }
+    }
+  );
+
+  server.registerTool(
+    "get_workflow_campaign_ab_tests",
+    {
+      title: "Get workflow campaign A/B tests",
+      description:
+        "Compares agent versions for every agent node with an A/B test (config.ab_test) in the campaign's pinned workflow version, in definition order; nodes is empty when there are none. Each node carries its configured split as arms (in order: arm A, B, C...) and results, one row per arm and version that ran: agent_version_id is the arm's configured id (it matches an arms entry), agent_version_name the version that ran, calls (calls with a recorded version), completed (calls whose call.status is completed) and duration_s (total call seconds). journeys counts each contact's journey by where it ended (settled, then success, failure and neutral by outcome), attributed to the version of the contact's first visit to the node; it counts finished journeys only, and is null when the node's sticky is false, since one journey can then use several versions. A deleted version's calls run the live version and show as a second row for the same arm, named after the live version. Raw counts, computed on each request.",
+      inputSchema: { campaign_id: workflowCampaignIdSchema, api_key: apiKeyOverrideSchema() },
+      annotations: { title: "Get workflow campaign A/B tests", readOnlyHint: true, openWorldHint: true },
+    },
+    async ({ campaign_id, api_key }, extra) => {
+      const apiKey = getApiKey(extra as any, api_key);
+      try {
+        const result = await bolnaFetch(
+          `/workflow-campaigns/${encodeURIComponent(campaign_id)}/ab-tests`,
           apiKey
         );
         return jsonResult(result);
