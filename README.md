@@ -1,7 +1,7 @@
 # Bolna MCP Server
 
 Remote MCP server (Streamable HTTP) wrapping the [Bolna](https://bolna.ai) voice
-AI REST API (`https://api.bolna.ai`): 122 tools covering nearly every documented
+AI REST API (`https://api.bolna.ai`): 123 tools covering nearly every documented
 Bolna endpoint, TypeScript, deployed on Vercel via `mcp-handler`.
 
 **Live at [mcp.bolna.ai](https://mcp.bolna.ai)** — that page has the same
@@ -18,7 +18,7 @@ docs are documented in the comment block at the top of
 
 | Endpoint | Tools | For |
 |---|---|---|
-| `/api/mcp` | all 122 | Anyone connecting the server themselves |
+| `/api/mcp` | all 123 | Anyone connecting the server themselves |
 | `/api/connector/mcp` | 9 | The Claude connector directory listing |
 
 **The directory surface is a fixed subset.** A directory listing is reviewed
@@ -79,7 +79,7 @@ as `api_key`.
 
 ## Available tools
 
-122 tools across 17 categories. "Write" tools flagged **Destructive** modify,
+123 tools across 17 categories. "Write" tools flagged **Destructive** modify,
 remove, or spend money and typically prompt for confirmation in MCP clients
 that respect tool annotations.
 
@@ -89,6 +89,7 @@ that respect tool annotations.
 |---|---|---|
 | `list_agents` | Read | List agents in the account (id, name, status, created_at). Paginated. |
 | `get_agent` | Read | Full config of one agent by ID. |
+| `list_agent_versions` | Read | Saved versions of an agent, with the live one marked; their ids are what a workflow A/B test's arms take. |
 | `create_agent` | Write | Create a new agent. Returns its ID. |
 | `update_agent` | Write, Destructive | Patch an existing agent's name, prompts, welcome message, webhook, or voice settings. |
 | `delete_agent` | Write, Destructive | Permanently delete an agent. Irreversible. |
@@ -446,7 +447,7 @@ interpolation in headers yet, so the key goes in directly:
 
 Instead of the `mcp-remote` bridge above, you can install this as a proper
 [Desktop Extension](https://github.com/modelcontextprotocol/mcpb) (`.mcpb`) —
-a local, stdio-based build of the same 122 tools, packaged with a manifest so
+a local, stdio-based build of the same 123 tools, packaged with a manifest so
 Claude Desktop can install it with one click and prompt you for your API key
 itself (no config file editing).
 

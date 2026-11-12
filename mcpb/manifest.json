@@ -4,7 +4,7 @@
   "display_name": "Bolna Voice AI",
   "version": "0.1.0",
   "description": "Manage Bolna voice AI agents, calls, batches, phone numbers, SIP trunks, and more from Claude.",
-  "long_description": "Local MCP server wrapping the Bolna Voice AI REST API: 122 tools covering agents, call executions, batches, dispositions, extraction categories, phone numbers, inbound routing, SIP trunks, sub-accounts, TTS voices/providers, workflows, graph agents, and documentation search. Requires a Bolna API key from your Bolna dashboard.",
+  "long_description": "Local MCP server wrapping the Bolna Voice AI REST API: 123 tools covering agents, call executions, batches, dispositions, extraction categories, phone numbers, inbound routing, SIP trunks, sub-accounts, TTS voices/providers, workflows, graph agents, and documentation search. Requires a Bolna API key from your Bolna dashboard.",
   "author": {
     "name": "Bolna",
     "url": "https://github.com/bolna-ai"
@@ -43,6 +43,7 @@
   "tools": [
     { "name": "list_agents", "description": "List agents in the account (id, name, status, created_at). Paginated." },
     { "name": "get_agent", "description": "Full config of one agent by ID." },
+    { "name": "list_agent_versions", "description": "Saved versions of an agent, with the live one marked; their ids are what a workflow A/B test's arms take." },
     { "name": "create_agent", "description": "Create a new agent. Returns its ID." },
     { "name": "update_agent", "description": "Patch an existing agent's name, prompts, welcome message, webhook, or voice settings." },
     { "name": "delete_agent", "description": "Permanently delete an agent. Irreversible." },
