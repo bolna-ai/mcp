@@ -161,7 +161,7 @@ export function registerReadTools(server: McpServer) {
     {
       title: "List agent versions",
       description:
-        "Lists an agent's saved versions, newest first: each version once, with its id, version_name, tags, version_status and timestamps, and the live one marked is_current (also returned as current_version_id). Deleted versions aren't listed. Paginated; read has_more for the next page. The id of any listed version works as an arm's agent_version_id in a workflow agent node's config.ab_test; the arm follows the named version, so later edits saved into that version apply and a rename doesn't break it. Use list_agents first if the agent ID is unknown.",
+        "Lists an agent's saved versions, newest first: each version once, with its id, version_name, tags, version_status and timestamps, and the live one marked is_current (also returned as current_version_id). Deleted versions aren't listed. Paginated; read has_more for the next page. Only listed versions can be A/B test arms: the id of any listed version works as an arm's agent_version_id in a workflow agent node's config.ab_test; the arm follows the named version, so later edits saved into that version apply and a rename doesn't break it. Use list_agents first if the agent ID is unknown.",
       inputSchema: {
         agent_id: agentIdSchema,
         page_number: pageNumberSchema,
