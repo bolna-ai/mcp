@@ -199,7 +199,7 @@ export function registerWorkflowEditTools(server: McpServer) {
     {
       title: "List agent variables",
       description:
-        "Lists the {placeholder} variables an agent's prompt, welcome message and graph prompts read, without the full agent config get_agent returns. With workflow_id, also checks each agent node in that workflow's draft that uses this agent (or only node_id): mapped, unmapped, auto_mappable (unmapped ones a start field of the same name could fill; patch_workflow_draft's map_agent_variables writes those mappings) and unused_mappings (mapped but never read by the prompt). Reads the agent's live version only: for a node with ab_test, validate_workflow's unmapped_agent_variable warnings cover every version in the test.",
+        "Lists the {placeholder} variables an agent's prompt, welcome message and graph prompts read, without the full agent config get_agent returns. With workflow_id, also checks each agent node in that workflow's draft that uses this agent (or only node_id): mapped, unmapped, auto_mappable (unmapped ones a start field of the same name could fill; patch_workflow_draft's map_agent_variables writes those mappings) and unused_mappings (mapped but never read by the prompt). Reads the agent's live version only: for a node with version_split, validate_workflow's unmapped_agent_variable warnings cover every version in the test.",
       inputSchema: {
         agent_id: agentIdSchema,
         workflow_id: workflowIdSchema.optional(),
