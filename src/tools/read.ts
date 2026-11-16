@@ -157,6 +157,33 @@ export function registerReadTools(server: McpServer) {
   );
 
   server.registerTool(
+    "list_agent_versions",
+    {
+      title: "List agent versions",
+      description:
+        "Lists an agent's saved versions, newest first: each version once, with its id, version_name, tags, version_status and timestamps, and the live one marked is_current (also returned as current_version_id). Deleted versions aren't listed. Paginated; read has_more for the next page. Only listed versions can be A/B test arms: the id of any listed version works as an arm's agent_version_id in a workflow agent node's config.version_split; the arm follows the named version, so later edits saved into that version apply and a rename doesn't break it. Use list_agents first if the agent ID is unknown.",
+      inputSchema: {
+        agent_id: agentIdSchema,
+        page_number: pageNumberSchema,
+        page_size: pageSizeSchema,
+        api_key: apiKeyOverrideSchema(),
+      },
+      annotations: { title: "List agent versions", readOnlyHint: true, openWorldHint: true },
+    },
+    async ({ agent_id, page_number, page_size, api_key }, extra) => {
+      const apiKey = getApiKey(extra as any, api_key);
+      try {
+        const versions = await bolnaFetch(`/v2/agent/${encodeURIComponent(agent_id)}/versions`, apiKey, {
+          query: { page_number, page_size },
+        });
+        return jsonResult(versions);
+      } catch (err) {
+        return toErrorResult(err, { agentId: agent_id });
+      }
+    }
+  );
+
+  server.registerTool(
     "list_agent_executions",
     {
       title: "List agent call history",

@@ -7,6 +7,7 @@ const TOOL_CATEGORIES: { category: string; tools: string[] }[] = [
     tools: [
       "list_agents",
       "get_agent",
+      "list_agent_versions",
       "create_agent",
       "update_agent",
       "delete_agent",
@@ -175,6 +176,7 @@ const TOOL_CATEGORIES: { category: string; tools: string[] }[] = [
       "abort_workflow_campaign",
       "list_workflow_campaign_executions",
       "get_workflow_campaign_report",
+      "get_workflow_campaign_ab_tests",
     ],
   },
   {
