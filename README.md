@@ -506,7 +506,8 @@ Either credential is verified before being forwarded to `api.bolna.ai` — see
 the comment block at the top of [`src/lib/auth.ts`](src/lib/auth.ts) for how.
 
 For local development, set `BOLNA_API_KEY` in `.env` and omit the header —
-the server falls back to it automatically.
+the server falls back to it automatically under `npm run dev`. A deployed
+server ignores it and always requires the header.
 
 ## Local dev
 
@@ -526,9 +527,9 @@ Deployed under the **Bolna AI** Vercel team, aliased to `mcp.bolna.ai`:
 vercel deploy --prod --scope bolna-ai
 ```
 
-Set `BOLNA_API_KEY` as a Vercel environment variable only if you want a
-server-wide fallback for testing; production callers should supply their own
-key via the Authorization header.
+Don't set `BOLNA_API_KEY` on the deployment expecting a fallback: it only
+applies under `npm run dev`, so every caller of a deployed server has to send
+their own key or OAuth token in the Authorization header.
 
 ## Test with MCP Inspector
 
