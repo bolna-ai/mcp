@@ -49,6 +49,7 @@ export async function verifyToken(
   try {
     const res = await fetch(`${SUPABASE_ISSUER}/oauth/userinfo`, {
       headers: { Authorization: `Bearer ${bearerToken}` },
+      signal: AbortSignal.timeout(10_000),
     });
     if (!res.ok) return undefined;
 
