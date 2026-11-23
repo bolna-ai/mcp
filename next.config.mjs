@@ -1,7 +1,18 @@
 import { withSentryConfig } from "@sentry/nextjs";
 
 /** @type {import('next').NextConfig} */
-const nextConfig = {};
+const nextConfig = {
+  async redirects() {
+    return [
+      {
+        source: "/:path*",
+        has: [{ type: "host", value: "bolna-mcp-bolna-ai.vercel.app" }],
+        destination: "https://mcp.bolna.ai/:path*",
+        permanent: true,
+      },
+    ];
+  },
+};
 
 export default withSentryConfig(nextConfig, {
   // For all available options, see:
