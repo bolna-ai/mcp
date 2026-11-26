@@ -52,6 +52,34 @@ function withoutApiKeyParam(config: unknown): unknown {
 }
 
 /**
+ * Directory reviewers (OpenAI's plugin directory requires it; Claude's accepts
+ * it) want all three behavioural hints as explicit booleans on every tool, not
+ * left to client defaults. The tool files set only some of them, so the
+ * connector surface fills in the rest here, without touching /api/mcp.
+ *
+ * - readOnlyHint / destructiveHint: kept as the tool declared them; a missing
+ *   readOnlyHint is treated as a write, and a read-only tool is never
+ *   destructive.
+ * - openWorldHint: always false on this surface. Every tool acts only on the
+ *   one Bolna account the user signed in to (a bounded private account), and
+ *   none reaches arbitrary public destinations. Nothing here can dial out.
+ */
+function withExplicitAnnotations(config: unknown): unknown {
+  const c = (config ?? {}) as Record<string, unknown>;
+  const a = (c.annotations ?? {}) as Record<string, unknown>;
+  const readOnlyHint = a.readOnlyHint === true;
+  return {
+    ...c,
+    annotations: {
+      ...a,
+      readOnlyHint,
+      destructiveHint: readOnlyHint ? false : a.destructiveHint === true,
+      openWorldHint: false,
+    },
+  };
+}
+
+/**
  * Belt-and-braces against an `api_key` that arrives anyway. Zod already
  * strips keys the (now shorter) schema doesn't declare, so this is the
  * second of two independent reasons the override can't reach a tool.
@@ -91,7 +119,12 @@ export function restrictToDirectorySurface(server: McpServer, allowed: ReadonlyS
     ...rest: unknown[]
   ) =>
     allowed.has(name)
-      ? (register as any)(name, withoutApiKeyParam(config), withoutApiKeyArg(cb), ...rest)
+      ? (register as any)(
+          name,
+          withExplicitAnnotations(withoutApiKeyParam(config)),
+          withoutApiKeyArg(cb),
+          ...rest
+        )
       : undefined;
   (server as unknown as Record<string, unknown>).registerPrompt = () => undefined;
 }
