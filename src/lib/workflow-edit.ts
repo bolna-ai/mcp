@@ -47,6 +47,25 @@ export function findNode(def: Definition, nodeId: string): Record<string, any> {
   return node;
 }
 
+/** A canvas Condition by id: the editor keeps it in the definition's ui stash, not in nodes. */
+function findCondition(def: Definition, id: string): Record<string, any> | undefined {
+  const ui = def.ui ?? {};
+  for (const entry of Array.isArray(ui.conditions) ? ui.conditions : []) {
+    // An entry from before chains held its one Condition inline.
+    if (!Array.isArray(entry?.chain)) {
+      if (entry?.id === id) return entry;
+      continue;
+    }
+    const link = entry.chain.find((l: any) => l?.id === id);
+    if (link) return link;
+  }
+  for (const key of ["orphan_client_nodes", "orphan_conditions"]) {
+    const orphan = (Array.isArray(ui[key]) ? ui[key] : []).find((o: any) => o?.node?.id === id);
+    if (orphan) return orphan.node;
+  }
+  return undefined;
+}
+
 function setAt(root: any, segments: PathSegment[], value: unknown): void {
   if (segments.length === 0) throw new EditError("path is empty");
   let cur = root;
@@ -269,8 +288,12 @@ async function applyOne(def: Definition, op: EditOp, agentVariables: AgentVariab
       return;
     }
     case "rename_node": {
-      const node = findNode(def, op.node_id);
+      const condition = nodes(def).some((n) => n?.id === op.node_id) ? undefined : findCondition(def, op.node_id);
+      const node = condition ?? findNode(def, op.node_id);
       if (op.new_id === undefined && op.name === undefined) throw new EditError("give new_id, name, or both");
+      if (condition && op.new_id !== undefined && op.new_id !== op.node_id) {
+        throw new EditError(`'${op.node_id}' is a canvas Condition: only its name can change here, not its id`);
+      }
       if (op.name !== undefined) {
         node.name = op.name;
         r.applied.push(`renamed ${op.node_id} to "${op.name}"`);

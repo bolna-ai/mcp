@@ -245,7 +245,7 @@ immutable version before it can run.
 | `get_workflow_draft` | Read | The current editable draft definition and its revision number (right after a publish: the published definition at revision 0). |
 | `save_workflow_draft` | Write, Destructive | Overwrite the draft's node graph and validate it. Requires the current revision to avoid clobbering concurrent edits. |
 | `patch_workflow_draft` | Write, Destructive | Edit single nodes, cases or values in the draft without resending it. Handles the revision and runs validate. |
-| `rename_workflow_node` | Write, Destructive | Change a node's name and/or id, rewriting every reference to the id. |
+| `rename_workflow_node` | Write, Destructive | Change a node's name and/or id, rewriting every reference to the id. Also names a canvas Condition. |
 | `duplicate_workflow` | Write | Copy a workflow into a new unpublished workflow, e.g. a test twin. |
 | `list_agent_variables` | Read | An agent's prompt variables, and which ones a workflow's agent nodes leave unmapped. |
 | `validate_workflow` | Read | Check the saved draft for errors before publishing. |
