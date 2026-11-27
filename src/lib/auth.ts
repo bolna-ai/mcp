@@ -27,7 +27,9 @@ import type { AuthInfo } from "@modelcontextprotocol/sdk/server/auth/types.js";
  * For local development, set BOLNA_API_KEY and omit the Authorization
  * header entirely — this fallback only ever applies when no header is
  * present, so it never masks a real (even if invalid) caller-supplied
- * credential.
+ * credential. It also only applies under `next dev` (NODE_ENV=development):
+ * on a deployment it would let anyone who leaves the header off act as the
+ * owner of that key.
  */
 
 const SUPABASE_ISSUER = "https://hbcyinehbjcanmnqywtg.supabase.co/auth/v1";
@@ -37,6 +39,7 @@ export async function verifyToken(
   bearerToken?: string
 ): Promise<AuthInfo | undefined> {
   if (!bearerToken) {
+    if (process.env.NODE_ENV !== "development") return undefined;
     const envKey = process.env.BOLNA_API_KEY;
     if (!envKey) return undefined;
     return { token: envKey, clientId: "local-dev", scopes: [] };
