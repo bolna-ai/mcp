@@ -2,6 +2,10 @@ import { BolnaApiError, MissingApiKeyError } from "./errors";
 
 const BOLNA_BASE_URL = process.env.BOLNA_BASE_URL || "https://api.bolna.ai";
 
+// Below the route's 60s maxDuration, so a hung request comes back as a tool
+// error instead of the platform killing the function mid-call.
+const UPSTREAM_TIMEOUT_MS = 50_000;
+
 interface BolnaRequestOptions {
   method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
   query?: Record<string, string | number | undefined>;
@@ -38,13 +42,22 @@ export async function bolnaFetch<T = unknown>(
   const headers: Record<string, string> = { Authorization: `Bearer ${apiKey}` };
   if (!options.form) headers["Content-Type"] = "application/json";
 
-  const res = await fetch(buildUrl(path, options.query), {
-    method: options.method ?? "GET",
-    headers,
-    body: options.form ?? (options.body !== undefined ? JSON.stringify(options.body) : undefined),
-  });
-
-  const text = await res.text();
+  let res: Response;
+  let text: string;
+  try {
+    res = await fetch(buildUrl(path, options.query), {
+      method: options.method ?? "GET",
+      headers,
+      body: options.form ?? (options.body !== undefined ? JSON.stringify(options.body) : undefined),
+      signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
+    });
+    text = await res.text();
+  } catch (err) {
+    if (err instanceof Error && err.name === "TimeoutError") {
+      throw new Error(`no response after ${UPSTREAM_TIMEOUT_MS / 1000}s`);
+    }
+    throw err;
+  }
   let parsed: unknown = undefined;
   if (text) {
     try {

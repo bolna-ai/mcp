@@ -10,3 +10,7 @@ import { createBolnaMcpRoute } from "../../../src/lib/mcp-route";
 const route = createBolnaMcpRoute({ basePath: "/api" });
 
 export const { GET, POST, DELETE } = route;
+
+// Vercel takes the function's time limit from this export. The maxDuration
+// passed to createMcpHandler only configures mcp-handler itself.
+export const maxDuration = 60;
