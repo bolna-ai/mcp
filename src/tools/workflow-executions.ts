@@ -55,7 +55,7 @@ export function registerWorkflowExecutionsTools(server: McpServer) {
     {
       title: "Get workflow execution",
       description:
-        "Retrieves a single contact's progress through a workflow: current node, every node attempt in order, the most recent 100 timeline events, and outcome once terminal. Poll this to track a run_workflow call or an entry from list_workflow_campaign_executions. view \"summary\" is much smaller: it adds path (one line per node attempt: node, matched case, next node, scheduled time), drops each attempt's inputs (an agent node's inputs repeat every prompt variable) and folds repeated warnings into one entry with a count. Use \"full\" to see the inputs a node resolved. state is filled in once the execution ends.",
+        "Retrieves a single contact's progress through a workflow: current node, every node attempt in order, the most recent 100 timeline events, and outcome once terminal. memory (each declared memory variable's final value) is null until the execution finishes; while it runs, each memory node's attempt shows the values it wrote. Poll this to track a run_workflow call or an entry from list_workflow_campaign_executions. view \"summary\" is much smaller: it adds path (one line per node attempt: node, matched case, next node, scheduled time), drops each attempt's inputs (an agent node's inputs repeat every prompt variable) and folds repeated warnings into one entry with a count. Use \"full\" to see the inputs a node resolved. state is filled in once the execution ends.",
       inputSchema: {
         execution_id: workflowExecutionIdSchema,
         view: z
