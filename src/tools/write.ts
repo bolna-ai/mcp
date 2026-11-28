@@ -59,7 +59,8 @@ const patchAgentConfigSchema = z
   .object({
     agent_name: z.string().min(1, "agent_name must not be empty").optional(),
     agent_welcome_message: z.string().optional(),
-    webhook_url: z.string().url().optional(),
+    // null (or "") removes the agent's webhook.
+    webhook_url: z.union([z.string().url(), z.literal("")]).nullable().optional(),
     synthesizer: z
       .object({ provider: z.string(), provider_config: z.record(z.any()) })
       .passthrough()
